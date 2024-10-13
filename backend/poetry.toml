@@ -1,0 +1,5 @@
+[installer]
+no-binary = [":none:"]
+
+[virtualenvs]
+in-project = true

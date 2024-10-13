@@ -1,0 +1,21 @@
+[tool.poetry]
+name = "livraria-virtual"
+version = "0.1.0"
+description = ""
+authors = ["Felipe"]
+readme = "README.md"
+
+[tool.poetry.dependencies]
+python = "^3.11"
+fastapi = "^0.115.0"
+sqlalchemy = "^2.0.35"
+uvicorn = "^0.31.1"
+pydantic = "^2.9.2"
+passlib = {extras = ["bcrypt"], version = "^1.7.4"}
+python-jose = {extras = ["cryptography"], version = "^3.3.0"}
+python-multipart = "^0.0.12"
+
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
