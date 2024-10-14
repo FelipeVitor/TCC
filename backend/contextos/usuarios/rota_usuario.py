@@ -7,6 +7,7 @@ from libs.database.sqlalchemy import _Session, pegar_conexao_db
 
 roteador = APIRouter(
     prefix="/usuarios",
+    tags=["usuario"]
 )
 
 

@@ -1,6 +1,8 @@
+from datetime import date
 from sqlalchemy import create_engine
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker
+
 
 
 _Base = declarative_base()
@@ -29,4 +31,22 @@ def pegar_conexao_db():
         db.close()
 
 def criar_tabela():
+    from contextos.usuarios.entidade_usuario import Usuario
+    from contextos.livros.entidade_livro import Livro
     _Base.metadata.create_all(engine)
+
+    usuario = Usuario.criar(
+        nome = "Westo",
+        sobrenome = "Coto",
+        data_nascimento = date.today(),
+        email = "a@b.com",
+        senha = "1234"
+    )
+    usuario.id = 1
+    try:
+        db = _Session()
+        db.add(usuario)
+        db.commit()
+    except Exception as e:
+        e
+        pass
