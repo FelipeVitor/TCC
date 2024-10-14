@@ -27,7 +27,7 @@ def get_password_hash(password):
 def criar_token_de_acesso_a_rotas_protegidas(data: dict, expires_delta: timedelta = None):
     to_encode = data.copy()
     if not data.get("sub", None):
-        raise ValueError("Passar o Usuário")
+        raise ValueError("Passar email do Usuário no sub")
         
     if expires_delta:
         expire = datetime.utcnow() + expires_delta
