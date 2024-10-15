@@ -1,49 +1,47 @@
-import React, { useState } from 'react';
-import { AppBar, Toolbar, Typography, Button, Grid, Card, CardContent, Box, CardMedia, Container, Pagination, Dialog, DialogTitle, DialogContent, DialogActions } from '@mui/material';
+import React, { useState, useEffect } from 'react';
+import { AppBar, Toolbar, Typography, Button, Grid, Card, CardContent, Box, CardMedia, Container, Pagination, Dialog, DialogTitle, DialogContent, DialogActions, TextField } from '@mui/material';
 import ShoppingCartIcon from '@mui/icons-material/ShoppingCart';
+import { useNavigate } from 'react-router-dom'; // Importe o hook para navegação
+import axios from 'axios';
 import './Home.css'; // Importando o CSS
 
-// Array de livros com preços e descrições
-const books = [
-  {
-    id: 1,
-    title: 'O Senhor dos Anéis',
-    author: 'J.R.R. Tolkien',
-    price: 'R$ 59,90',
-    description: 'Uma aventura épica pela Terra Média em busca do Um Anel.',
-  },
-  {
-    id: 2,
-    title: 'Deastahh - O Horizonte Escarlate',
-    author: 'Felipe Vitor',
-    price: 'R$ 39,90',
-    description: 'A jornada dos pioneiros ao centro de um continente.',
-  },
-  {
-    id: 3,
-    title: 'Kandic & Levi - Os Senhores da Guerra',
-    author: 'Robson de Jesus',
-    price: 'R$ 49,90',
-    description: 'Uma batalha secreta acontece entre agentes do bem e mal.',
-  },
-  { id: 4, title: 'A Revolução dos Bichos', author: 'George Orwell', price: 'R$ 29,90', image: 'https://via.placeholder.com/150' },
-  { id: 5, title: '1984', author: 'George Orwell', price: 'R$ 34,90', image: 'https://via.placeholder.com/150' },
-  { id: 6, title: 'O Pequeno Príncipe', author: 'Antoine de Saint-Exupéry', price: 'R$ 24,90', image: 'https://via.placeholder.com/150' },
-  { id: 7, title: 'Moby Dick', author: 'Herman Melville', price: 'R$ 44,90', image: 'https://via.placeholder.com/150' },
-  { id: 8, title: 'Dom Quixote', author: 'Miguel de Cervantes', price: 'R$ 54,90', image: 'https://via.placeholder.com/150' },
-  { id: 9, title: 'Crime e Castigo', author: 'Fiódor Dostoiévski', price: 'R$ 49,90', image: 'https://via.placeholder.com/150' },
-  { id: 10, title: 'Orgulho e Preconceito', author: 'Jane Austen', price: 'R$ 39,90', image: 'https://via.placeholder.com/150' },
-];
-
 function Home() {
-  const [currentPage, setCurrentPage] = useState(1);
-  const booksPerPage = 4; // Definindo 4 livros por página
+  const [currentPage, setCurrentPage] = useState(1); // Página atual
+  const [totalPages, setTotalPages] = useState(0); // Total de páginas
+  const [books, setBooks] = useState([]); // Livros da página atual
   const [open, setOpen] = useState(false); // Estado para abrir/fechar o modal
   const [selectedBook, setSelectedBook] = useState(null); // Livro selecionado
+  const [searchTerm, setSearchTerm] = useState(''); // Termo de busca
+  const [debouncedSearchTerm, setDebouncedSearchTerm] = useState(''); // Termo de busca com debounce
+  const booksPerPage = 4; // Número de livros por página
+  const navigate = useNavigate(); // Hook para navegação
 
-  const indexOfLastBook = currentPage * booksPerPage;
-  const indexOfFirstBook = indexOfLastBook - booksPerPage;
-  const currentBooks = books.slice(indexOfFirstBook, indexOfLastBook);
+  // Função de debouncing
+  useEffect(() => {
+    const handler = setTimeout(() => {
+      setDebouncedSearchTerm(searchTerm);
+    }, 500); // 500ms de debounce
+
+    return () => {
+      clearTimeout(handler); // Limpa o timeout na desmontagem ou quando o searchTerm mudar
+    };
+  }, [searchTerm]);
+
+  // Função para buscar os livros da API com base na página e no termo de busca
+  const fetchBooks = async (pagina, busca = '') => {
+    try {
+      const response = await axios.get(`http://0.0.0.0:9000/livros/?quantidade=${booksPerPage}&pagina=${pagina}&busca=${busca}`);
+      setBooks(response.data.data); // Define os livros da página atual
+      setTotalPages(response.data.total_paginas); // Define o total de páginas com base no backend
+    } catch (error) {
+      console.error('Erro ao buscar os livros:', error);
+    }
+  };
+
+  // Buscar livros sempre que a página atual ou o termo de busca (com debounce) for alterado
+  useEffect(() => {
+    fetchBooks(currentPage, debouncedSearchTerm);
+  }, [currentPage, debouncedSearchTerm]);
 
   // Função para abrir o modal com os detalhes do livro
   const handleOpen = (book) => {
@@ -56,26 +54,32 @@ function Home() {
     setOpen(false);
   };
 
+  // Função para mudar de página
   const handlePageChange = (event, value) => {
-    setCurrentPage(value);
+    setCurrentPage(value); // Atualiza a página atual com o valor da paginação
+  };
+
+  // Função para redirecionar para a tela do carrinho
+  const handleCartClick = () => {
+    navigate('/carrinho'); // Navega para a página de detalhes do carrinho
   };
 
   return (
     <div>
       {/* Barra de navegação */}
-      <AppBar
-        sx={{
-          backgroundColor: '#33b998',
-          color: 'white',
-          fontWeight: 'bold',
-        }}
-        position="static"
-      >
+      <AppBar sx={{ backgroundColor: '#33b998', color: 'white', fontWeight: 'bold' }} position="static">
         <Toolbar>
           <Typography variant="h6" style={{ flexGrow: 1 }}>
             Livraria Virtual
           </Typography>
-          <Button color="inherit" startIcon={<ShoppingCartIcon />}>
+          <TextField
+            variant="outlined"
+            placeholder="Buscar por título ou autor"
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)} // Atualiza o termo de busca
+            sx={{ backgroundColor: 'white', borderRadius: '4px' }}
+          />
+          <Button color="inherit" startIcon={<ShoppingCartIcon />} onClick={handleCartClick}>
             Carrinho
           </Button>
         </Toolbar>
@@ -89,83 +93,30 @@ function Home() {
 
         {/* Lista de livros */}
         <Grid container spacing={3} justifyContent="center">
-          {currentBooks.map((book) => (
+          {books.map((book) => (
             <Grid item xs={12} sm={6} md={3} key={book.id}>
-              <Card
-                sx={{
-                  display: 'flex',
-                  flexDirection: 'column',
-                  justifyContent: 'space-between',
-                  boxShadow: 3,
-                  height: '100%', // Para garantir que todos os cards tenham altura consistente
-                }}
-              >
-                {/* Container Box para manter a proporção 16:9 */}
-                <Box
-                  sx={{
-                    position: 'relative',
-                    paddingTop: '56.25%', // Proporção 16:9
-                  }}
-                >
+              <Card sx={{ display: 'flex', flexDirection: 'column', justifyContent: 'space-between', boxShadow: 3, height: '100%' }}>
+                <Box sx={{ position: 'relative', paddingTop: '56.25%' }}>
                   <CardMedia
                     component="img"
-                    image={book.image}
-                    alt={book.title}
-                    sx={{
-                      position: 'absolute',
-                      top: 0,
-                      left: 0,
-                      width: '100%',
-                      height: '100%',
-                      objectFit: 'cover', // Mantém a proporção da imagem sem distorcer
-                    }}
+                    image={book.url_imagem} // Usando a URL da imagem da API
+                    alt={book.titulo}
+                    sx={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', objectFit: 'cover' }}
                   />
                 </Box>
-
-                <CardContent
-                  sx={{
-                    flexGrow: 1,
-                    display: 'flex',
-                    flexDirection: 'column',
-                    justifyContent: 'space-between',
-                  }}
-                >
-                  <Typography variant="h6">{book.title}</Typography>
+                <CardContent sx={{ flexGrow: 1, display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
+                  <Typography variant="h6">{book.titulo}</Typography>
                   <Typography variant="subtitle1" color="textSecondary">
-                    {book.author}
+                    {book.autor}
                   </Typography>
                   <Typography variant="h6" color="primary">
-                    {book.price}
+                    R$ {book.preco}
                   </Typography>
-                  <Button
-                    sx={{
-                      backgroundColor: '#33b998',
-                      color: 'white',
-                      fontWeight: 'bold',
-                      '&:hover': {
-                        backgroundColor: '#2e8b74',
-                      },
-                      mt: 2,
-                    }}
-                    variant="contained"
-                    fullWidth
-                    onClick={() => handleOpen(book)} // Ao clicar, abre o modal com os detalhes
-                  >
+                  <Button sx={{ backgroundColor: '#33b998', color: 'white', fontWeight: 'bold', '&:hover': { backgroundColor: '#2e8b74' }, mt: 2 }} variant="contained" fullWidth onClick={() => handleOpen(book)}>
                     Detalhes
                   </Button>
                 </CardContent>
-                <Button
-                  sx={{
-                    backgroundColor: '#33b998',
-                    color: 'white',
-                    fontWeight: 'bold',
-                    '&:hover': {
-                      backgroundColor: '#2e8b74',
-                    },
-                  }}
-                  variant="contained"
-                  fullWidth
-                >
+                <Button sx={{ backgroundColor: '#33b998', color: 'white', fontWeight: 'bold', '&:hover': { backgroundColor: '#2e8b74' } }} variant="contained" fullWidth>
                   Adicionar ao carrinho
                 </Button>
               </Card>
@@ -175,29 +126,19 @@ function Home() {
 
         {/* Componente de paginação */}
         <Box sx={{ display: 'flex', justifyContent: 'center', mt: 4 }}>
-          <Pagination
-            count={Math.ceil(books.length / booksPerPage)} // Calcula o número total de páginas
-            page={currentPage}
-            onChange={handlePageChange}
-            color="primary"
-          />
+          <Pagination count={totalPages} page={currentPage} onChange={handlePageChange} color="primary" />
         </Box>
       </Container>
 
       {/* Pop-up de detalhes */}
       {selectedBook && (
         <Dialog open={open} onClose={handleClose}>
-          <DialogTitle>{selectedBook.title}</DialogTitle>
+          <DialogTitle>{selectedBook.titulo}</DialogTitle>
           <DialogContent>
-            <Typography variant="h6">{selectedBook.author}</Typography>
-            <Typography variant="body1">{selectedBook.description}</Typography>
-            {selectedBook.image && (
-              <Box
-                component="img"
-                src={selectedBook.image}
-                alt={selectedBook.title}
-                sx={{ mt: 2, width: '100%', maxHeight: '300px' }}
-              />
+            <Typography variant="h6">{selectedBook.autor}</Typography>
+            <Typography variant="body1">{selectedBook.descricao}</Typography>
+            {selectedBook.url_imagem && (
+              <Box component="img" src={selectedBook.url_imagem} alt={selectedBook.titulo} sx={{ mt: 2, width: '100%', maxHeight: '300px' }} />
             )}
           </DialogContent>
           <DialogActions>

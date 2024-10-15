@@ -1,4 +1,4 @@
-from sqlalchemy import create_engine, Column, Integer, String, ForeignKey, Numeric
+from sqlalchemy import Boolean, create_engine, Column, Integer, String, ForeignKey, Numeric
 from libs.database.sqlalchemy import _Base
 
 class Livro(_Base):
@@ -12,6 +12,7 @@ class Livro(_Base):
     preco = Column(Numeric(10, 2), nullable=False)
     descricao = Column(String(250), nullable=False)
     url_imagem = Column(String(), nullable=False)
+    deletado = Column(Boolean, default=False, nullable=False)
 
     @classmethod
     def criar(cls, titulo, usuario_id, genero, quantidade, preco, descricao, url_imagem):        
@@ -23,5 +24,6 @@ class Livro(_Base):
             quantidade=quantidade,
             preco=preco,
             descricao=descricao,
-            url_imagem=url_imagem
+            url_imagem=url_imagem,
+            deletado=False
         )
