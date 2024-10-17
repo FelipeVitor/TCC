@@ -4,6 +4,7 @@ import './App.css';
 import Home from '../Home/Home';
 import { TextField, Button, IconButton, InputAdornment } from '@mui/material'; // Importando TextField e Button do MUI
 import { Visibility, VisibilityOff } from '@mui/icons-material';
+import Cart from '../Cart/Cart'
 
 
 function App() {
@@ -36,7 +37,7 @@ function App() {
       }
 
       const data = await response.json();
-      const { token } = data;
+      const token = data.access_token;
 
       // Armazenar o token no localStorage e redirecionar para a página principal
       localStorage.setItem('token', token);
@@ -84,10 +85,10 @@ function App() {
                   ),
                 }}
               />
-              
-              <Button 
-                variant="contained" 
-                color="primary" 
+
+              <Button
+                variant="contained"
+                color="primary"
                 onClick={handleLogin}
                 fullWidth
               >
@@ -98,9 +99,12 @@ function App() {
           </div>
         }
       />
-      
+
       {/* Rota da página principal */}
       <Route path="/home" element={<Home />} />
+
+      {/* Rota para a tela do carrinho */}
+      <Route path="/cart" element={<Cart />} />
     </Routes>
   );
 }

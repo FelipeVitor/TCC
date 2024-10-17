@@ -20,7 +20,7 @@ function Home() {
   useEffect(() => {
     const handler = setTimeout(() => {
       setDebouncedSearchTerm(searchTerm);
-    }, 500); // 500ms de debounce
+    }, 700); // 500ms de debounce
 
     return () => {
       clearTimeout(handler); // Limpa o timeout na desmontagem ou quando o searchTerm mudar
@@ -61,7 +61,25 @@ function Home() {
 
   // Função para redirecionar para a tela do carrinho
   const handleCartClick = () => {
-    navigate('/carrinho'); // Navega para a página de detalhes do carrinho
+    navigate('/cart'); // Navega para a página de detalhes do carrinho
+  };
+
+  const handleAddToCart = (book) => {
+    // Verifica se o usuário está logado
+    debugger
+    const token = localStorage.getItem('token');
+    // Verifica se a quantidade do livro é maior que 0
+    if (!token || token === 'undefined') {
+      if (book.quantidade > 0) {
+        // Lógica para adicionar o item ao carrinho (API ou estado local)
+        console.log(`${book.titulo} adicionado ao carrinho!`);
+        // Aqui, você pode fazer a chamada para a API ou atualizar o estado com o item adicionado ao carrinho.
+      } else {
+        // Exibe uma mensagem informando que o livro está fora de estoque
+        console.log(`O livro ${book.titulo} está fora de estoque.`);
+        alert(`O livro ${book.titulo} está fora de estoque.`);
+      }
+    }
   };
 
   return (
@@ -116,8 +134,13 @@ function Home() {
                     Detalhes
                   </Button>
                 </CardContent>
-                <Button sx={{ backgroundColor: '#33b998', color: 'white', fontWeight: 'bold', '&:hover': { backgroundColor: '#2e8b74' } }} variant="contained" fullWidth>
-                  Adicionar ao carrinho
+                <Button
+                  sx={{ backgroundColor: '#33b998', color: 'white', fontWeight: 'bold', '&:hover': { backgroundColor: '#2e8b74' } }}
+                  variant="contained"
+                  fullWidth
+                  onClick={() => handleAddToCart(book)} // Adiciona ao carrinho
+                >
+                  Adicionar ao Carrinho
                 </Button>
               </Card>
             </Grid>

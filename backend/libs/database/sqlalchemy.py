@@ -36,13 +36,13 @@ def criar_tabela():
     _Base.metadata.create_all(engine)
 
     usuario = Usuario.criar(
-        nome="Eli",
-        sobrenome="Oto",
+        nome="Westo",
+        sobrenome="Coto",
         data_nascimento=date.today(),
         email="a@b.com",
         senha="1234",
     )
-    usuario.id = 2
+    usuario.id = 1
     try:
         db = _Session()
         db.add(usuario)
