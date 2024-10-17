@@ -9,7 +9,7 @@ class Carrinho(_Base):
 
     id = Column(Integer, primary_key=True, autoincrement=True)
     usuario_id = Column(Integer, ForeignKey("usuarios.id"), nullable=False)
-    livro_id = Column(Integer, ForeignKey("livros.id"), nullable=False, unique=True)
+    livro_id = Column(Integer, ForeignKey("livros.id"), nullable=False)
     quantidade = Column(Integer, nullable=False)
 
     # Relacionamento com a tabela de livros

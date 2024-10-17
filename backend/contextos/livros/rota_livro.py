@@ -1,19 +1,19 @@
-from fastapi import APIRouter, Depends, HTTPException, Response
+from typing import Optional
+
+from fastapi import APIRouter, Depends, HTTPException, Query, Response
 from pydantic import BaseModel
+from sqlalchemy import or_
 from sqlalchemy.orm import Session
+
 from contextos.livros.entidade_livro import (
     Livro,
 )  # Certifique-se de que a entidade Livro esteja importada
 from contextos.livros.modelos_livro import CadastrarLivro
 from contextos.usuarios.entidade_usuario import Usuario
-from libs.database.sqlalchemy import _Session, pegar_conexao_db
 from libs.autenticacao.config import JWTBearer
-from fastapi import Query
-from typing import Optional
-from sqlalchemy import or_
+from libs.database.sqlalchemy import _Session, pegar_conexao_db
 
-
-roteador = APIRouter(prefix="/livros", tags=["livro"])
+roteador = APIRouter(prefix="/livros", tags=["Livro"])
 
 
 # Rota para cadastrar livro

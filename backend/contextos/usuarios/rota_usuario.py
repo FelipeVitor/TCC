@@ -5,7 +5,7 @@ from contextos.usuarios.modelos_usuario import CadastrarUsuario
 from libs.autenticacao.config import JWTBearer
 from libs.database.sqlalchemy import _Session, pegar_conexao_db
 
-roteador = APIRouter(prefix="/usuarios", tags=["usuario"])
+roteador = APIRouter(prefix="/usuarios", tags=["Usuario"])
 
 
 # Rota para cadastrar usuário
