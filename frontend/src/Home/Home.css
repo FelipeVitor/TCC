@@ -2,39 +2,38 @@
 
 /* Estilos para o título principal */
 .main-title {
-    font-family: 'Arial', sans-serif;
-    color: #333;
-    margin-top: 30px;
-    margin-bottom: 20px;
-    text-align: center;
-  }
-  
-  /* Estilos para os cards de livros */
-  .book-card {
-    border-radius: 10px;
-    box-shadow: 0px 3px 6px rgba(0, 0, 0, 0.1);
-    transition: transform 0.3s ease, box-shadow 0.3s ease;
-  }
-  
-  .book-card:hover {
-    transform: translateY(-10px);
-    box-shadow: 0px 5px 15px rgba(0, 0, 0, 0.2);
-  }
-  
-  /* Estilos para o título do livro */
-  .book-title {
-    font-weight: bold;
-    font-size: 1.2rem;
-  }
-  
-  /* Estilos para o botão de adicionar ao carrinho */
-  .add-to-cart-btn {
-    background-color: #39cea9;
-    color: white;
-    font-weight: bold;
-  }
-  
-  .add-to-cart-btn:hover {
-    background-color: #2e8b74;
-  }
-  
+  font-family: 'Arial', sans-serif;
+  color: #333;
+  margin-top: 30px;
+  margin-bottom: 20px;
+  text-align: center;
+}
+
+/* Estilos para os cards de livros */
+.book-card {
+  border-radius: 10px;
+  box-shadow: 0px 3px 6px rgba(0, 0, 0, 0.1);
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+.book-card:hover {
+  transform: translateY(-10px);
+  box-shadow: 0px 5px 15px rgba(0, 0, 0, 0.2);
+}
+
+/* Estilos para o título do livro */
+.book-title {
+  font-weight: bold;
+  font-size: 1.2rem;
+}
+
+/* Estilos para o botão de adicionar ao carrinho */
+.add-to-cart-btn {
+  background-color: #2e8b74;
+  color: white;
+  font-weight: bold;
+}
+
+.add-to-cart-btn:hover {
+  background-color: #215f50;
+}

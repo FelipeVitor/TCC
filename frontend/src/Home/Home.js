@@ -13,6 +13,7 @@ function Home() {
   const [selectedBook, setSelectedBook] = useState(null); // Livro selecionado
   const [searchTerm, setSearchTerm] = useState(''); // Termo de busca
   const [debouncedSearchTerm, setDebouncedSearchTerm] = useState(''); // Termo de busca com debounce
+  const [quantities, setQuantities] = useState({}); // Estado para armazenar as quantidades dos livros
   const booksPerPage = 4; // Número de livros por página
   const navigate = useNavigate(); // Hook para navegação
 
@@ -64,28 +65,43 @@ function Home() {
     navigate('/cart'); // Navega para a página de detalhes do carrinho
   };
 
-  const handleAddToCart = (book) => {
-    // Verifica se o usuário está logado
-    debugger
-    const token = localStorage.getItem('token');
-    // Verifica se a quantidade do livro é maior que 0
-    if (!token || token === 'undefined') {
-      if (book.quantidade > 0) {
-        // Lógica para adicionar o item ao carrinho (API ou estado local)
-        console.log(`${book.titulo} adicionado ao carrinho!`);
-        // Aqui, você pode fazer a chamada para a API ou atualizar o estado com o item adicionado ao carrinho.
-      } else {
-        // Exibe uma mensagem informando que o livro está fora de estoque
-        console.log(`O livro ${book.titulo} está fora de estoque.`);
-        alert(`O livro ${book.titulo} está fora de estoque.`);
+  // Função para controlar a quantidade de cada livro
+  const handleQuantityChange = (id, quantity) => {
+    setQuantities({
+      ...quantities,
+      [id]: quantity, // Atualiza a quantidade do livro com base no ID
+    });
+  };
+
+  // Função para adicionar o livro ao carrinho
+  const handleAddToCart = async (book) => {
+    const quantity = quantities[book.id] || 1; // Verifica a quantidade selecionada ou 1 por padrão
+    if (quantity > 0) {
+      try {
+        const token = localStorage.getItem('token');
+        await axios.post(
+          'http://0.0.0.0:9000/carrinho/adicionar',
+          { livro_id: book.id, quantidade: quantity },
+          { headers: { Authorization: `Bearer ${token}` } }
+        );
+        alert(`${book.titulo} adicionado ao carrinho!`);
+      } catch (error) {
+        console.error('Erro ao adicionar ao carrinho:', error);
+
+        if (error.message)
+          alert(error.message);
+        else
+          alert(error)
       }
+    } else {
+      alert(`A quantidade de ${book.titulo} deve ser maior que zero.`);
     }
   };
 
   return (
     <div>
       {/* Barra de navegação */}
-      <AppBar sx={{ backgroundColor: '#33b998', color: 'white', fontWeight: 'bold' }} position="static">
+      <AppBar sx={{ backgroundColor: '#2e8b74', color: 'white', fontWeight: 'bold' }} position="static">
         <Toolbar>
           <Typography variant="h6" style={{ flexGrow: 1 }}>
             Livraria Virtual
@@ -114,7 +130,7 @@ function Home() {
           {books.map((book) => (
             <Grid item xs={12} sm={6} md={3} key={book.id}>
               <Card sx={{ display: 'flex', flexDirection: 'column', justifyContent: 'space-between', boxShadow: 3, height: '100%' }}>
-                <Box sx={{ position: 'relative', paddingTop: '56.25%' }}>
+                <Box sx={{ position: 'relative', paddingTop: '125%' }}>
                   <CardMedia
                     component="img"
                     image={book.url_imagem} // Usando a URL da imagem da API
@@ -130,15 +146,28 @@ function Home() {
                   <Typography variant="h6" color="primary">
                     R$ {book.preco}
                   </Typography>
-                  <Button sx={{ backgroundColor: '#33b998', color: 'white', fontWeight: 'bold', '&:hover': { backgroundColor: '#2e8b74' }, mt: 2 }} variant="contained" fullWidth onClick={() => handleOpen(book)}>
+
+                  {/* Controle de quantidade */}
+                  <TextField
+                    label="Quantidade"
+                    type="number"
+                    value={quantities[book.id] || 1}
+                    onChange={(e) => handleQuantityChange(book.id, parseInt(e.target.value))}
+                    InputProps={{ inputProps: { min: 1 } }}
+                    variant="outlined"
+                    size="small"
+                    sx={{ mt: 2, width: '100px' }}
+                  />
+
+                  <Button sx={{ backgroundColor: '#2e8b74', color: 'white', fontWeight: 'bold', '&:hover': { backgroundColor: '#215f50' }, mt: 2 }} variant="contained" fullWidth onClick={() => handleOpen(book)}>
                     Detalhes
                   </Button>
                 </CardContent>
                 <Button
-                  sx={{ backgroundColor: '#33b998', color: 'white', fontWeight: 'bold', '&:hover': { backgroundColor: '#2e8b74' } }}
+                  sx={{ backgroundColor: '#2e8b74', color: 'white', fontWeight: 'bold', '&:hover': { backgroundColor: '#215f50' } }}
                   variant="contained"
                   fullWidth
-                  onClick={() => handleAddToCart(book)} // Adiciona ao carrinho
+                  onClick={() => handleAddToCart(book)} // Adiciona ao carrinho com a quantidade selecionada
                 >
                   Adicionar ao Carrinho
                 </Button>

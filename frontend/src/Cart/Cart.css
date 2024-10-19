@@ -1,0 +1,45 @@
+.cart-container {
+    display: flex;
+    justify-content: space-between;
+    /* Distribui os itens com espaço entre eles */
+    align-items: flex-start;
+    /* Alinha os itens no topo */
+    padding: 20px;
+}
+
+.cart-items {
+    width: 70%;
+    /* Define o espaço que a lista de itens ocupará */
+}
+
+.cart-summary {
+    width: 30%;
+    /* Define o espaço para o resumo do carrinho */
+    display: flex;
+    flex-direction: column;
+    /* Empilha o total e o botão verticalmente */
+    align-items: flex-end;
+    /* Alinha o total e o botão à direita */
+    padding-right: 20px;
+    /* Adiciona um espaçamento à direita */
+}
+
+.total {
+    margin-bottom: 20px;
+    font-size: 1.5rem;
+    font-weight: bold;
+}
+
+.checkout-button {
+    background-color: #28a745;
+    color: white;
+    border: none;
+    padding: 10px 20px;
+    font-size: 1.2rem;
+    cursor: pointer;
+}
+
+.checkout-button:hover {
+    background-color: #218838;
+    /* Efeito de hover para o botão */
+}
