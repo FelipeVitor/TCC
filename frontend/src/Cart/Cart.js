@@ -61,6 +61,7 @@ function Cart() {
                             item.livro.id === id ? { ...item, carrinho: { ...item.carrinho, quantidade: previousQuantity } } : item
                         );
                         setCartItems(restoredCartItems);
+                        return
                     }
                 }
 

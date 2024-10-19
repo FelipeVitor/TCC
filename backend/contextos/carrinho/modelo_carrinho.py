@@ -13,6 +13,7 @@ class LivroRetorno(BaseModel):
     preco: float
     genero: str
     descricao: str
+    url_imagem: str
 
 
 class CarrinhoRetorno(BaseModel):

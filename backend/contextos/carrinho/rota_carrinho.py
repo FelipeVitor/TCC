@@ -113,6 +113,7 @@ def buscar_carrinho_do_usuario(
                     preco=livro.preco,
                     genero=livro.genero,
                     descricao=livro.descricao,
+                    url_imagem=livro.url_imagem,
                 ),
                 carrinho=CarrinhoRetorno(
                     quantidade=quantidade, total=quantidade * livro.preco
