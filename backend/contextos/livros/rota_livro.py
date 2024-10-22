@@ -92,7 +92,7 @@ def listar_livros(
 
 
 # Rota para obter um livro pelo ID
-@roteador.get("/{id}")
+@roteador.get("/obter-livros/{id}")
 def obter_livro(id: int, db: _Session = Depends(pegar_conexao_db)):
     livro = db.query(Livro).filter(Livro.id == id).first()
 
@@ -185,3 +185,52 @@ def deletar_livro(
     db.commit()
 
     return Response(status_code=204)  # Retorna 204 No Content após deletar
+
+
+# Rota para listar todos os livros com paginação, iniciando da página 1
+@roteador.get("/livros-do-autor")
+def listar_livros_do_autor(
+    quantidade: int = Query(10, ge=1),
+    pagina: int = Query(1, ge=1),
+    busca: Optional[str] = Query(None),  # Parâmetro de busca opcional
+    db: _Session = Depends(pegar_conexao_db),
+    info_do_login: str = Depends(JWTBearer()),
+):
+    # Calcula o offset com base na página e no tamanho da página (ajustando para que a primeira página seja 1)
+    offset = (pagina - 1) * quantidade
+
+    # Pega email do usuário
+    email_usuario = info_do_login.get("sub")
+
+    # Busca o usuário no banco de dados com base no email
+    usuario = db.query(Usuario).filter(Usuario.email.ilike(email_usuario)).first()
+
+    # Verificação se o usuário existe
+    if not usuario:
+        raise HTTPException(status_code=404, detail="Usuário não encontrado.")
+
+    # Busca todos os livros com o join para trazer informações do autor
+    consulta = db.query(Livro).join(Usuario, Livro.usuario_id == Usuario.id)
+
+    # Filtra a consulta para trazer somente os do usuario logado
+    consulta = consulta.filter(
+        Livro.usuario_id == usuario.id, Livro.deletado.is_(False)
+    )
+
+    # Executa a consulta com limite e offset
+    livros = consulta.offset(offset).limit(quantidade).all()
+
+    # Conta o total de livros filtrados (sem limite e offset)
+    total = consulta.count()
+
+    # Calcula o número total de páginas
+    total_paginas = (total + quantidade - 1) // quantidade
+
+    # Retorna os livros e a paginação
+    return {
+        "total": total,
+        "tamanho_pagina": quantidade,
+        "total_paginas": total_paginas,
+        "pagina": pagina,
+        "data": livros,
+    }

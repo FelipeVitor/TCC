@@ -1,81 +1,83 @@
 import React, { useState, useEffect } from 'react';
-import { AppBar, Toolbar, Typography, Button, Grid, Card, CardContent, Box, CardMedia, Container, Pagination, Dialog, DialogTitle, DialogContent, DialogActions, TextField } from '@mui/material';
+import { AppBar, Toolbar, Typography, Button, Grid, Card, CardContent, Box, CardMedia, Container, Pagination, Dialog, DialogTitle, DialogContent, DialogActions, TextField, Avatar, Menu, MenuItem, IconButton } from '@mui/material';
 import ShoppingCartIcon from '@mui/icons-material/ShoppingCart';
-import { useNavigate } from 'react-router-dom'; // Importe o hook para navegação
+import AccountCircleIcon from '@mui/icons-material/AccountCircle'; // Ícone de perfil
+import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
-import './Home.css'; // Importando o CSS
+import './Home.css';
 
 function Home() {
-  const [currentPage, setCurrentPage] = useState(1); // Página atual
-  const [totalPages, setTotalPages] = useState(0); // Total de páginas
-  const [books, setBooks] = useState([]); // Livros da página atual
-  const [open, setOpen] = useState(false); // Estado para abrir/fechar o modal
-  const [selectedBook, setSelectedBook] = useState(null); // Livro selecionado
-  const [searchTerm, setSearchTerm] = useState(''); // Termo de busca
-  const [debouncedSearchTerm, setDebouncedSearchTerm] = useState(''); // Termo de busca com debounce
-  const [quantities, setQuantities] = useState({}); // Estado para armazenar as quantidades dos livros
-  const booksPerPage = 4; // Número de livros por página
-  const navigate = useNavigate(); // Hook para navegação
+  const [currentPage, setCurrentPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(0);
+  const [books, setBooks] = useState([]);
+  const [open, setOpen] = useState(false);
+  const [selectedBook, setSelectedBook] = useState(null);
+  const [searchTerm, setSearchTerm] = useState('');
+  const [debouncedSearchTerm, setDebouncedSearchTerm] = useState('');
+  const [quantities, setQuantities] = useState({});
+  const [anchorEl, setAnchorEl] = useState(null); // Estado para controlar o submenu do perfil
+  const booksPerPage = 4;
+  const navigate = useNavigate();
 
-  // Função de debouncing
   useEffect(() => {
     const handler = setTimeout(() => {
       setDebouncedSearchTerm(searchTerm);
-    }, 700); // 500ms de debounce
-
+    }, 700);
     return () => {
-      clearTimeout(handler); // Limpa o timeout na desmontagem ou quando o searchTerm mudar
+      clearTimeout(handler);
     };
   }, [searchTerm]);
 
-  // Função para buscar os livros da API com base na página e no termo de busca
   const fetchBooks = async (pagina, busca = '') => {
     try {
       const response = await axios.get(`http://0.0.0.0:9000/livros/?quantidade=${booksPerPage}&pagina=${pagina}&busca=${busca}`);
-      setBooks(response.data.data); // Define os livros da página atual
-      setTotalPages(response.data.total_paginas); // Define o total de páginas com base no backend
+      setBooks(response.data.data);
+      setTotalPages(response.data.total_paginas);
     } catch (error) {
       console.error('Erro ao buscar os livros:', error);
     }
   };
 
-  // Buscar livros sempre que a página atual ou o termo de busca (com debounce) for alterado
   useEffect(() => {
     fetchBooks(currentPage, debouncedSearchTerm);
   }, [currentPage, debouncedSearchTerm]);
 
-  // Função para abrir o modal com os detalhes do livro
-  const handleOpen = (book) => {
-    setSelectedBook(book);
-    setOpen(true);
+  const handleOpen = async (book) => {
+    try {
+      const response = await axios.get(`http://0.0.0.0:9000/livros/obter-livros/${book.id}`);
+      setSelectedBook(response.data);  // Atualize o livro selecionado com os dados obtidos da API
+      setOpen(true);
+    } catch (error) {
+      console.error('Erro ao buscar o livro:', error);
+    }
   };
 
-  // Função para fechar o modal
+
   const handleClose = () => {
     setOpen(false);
   };
 
-  // Função para mudar de página
   const handlePageChange = (event, value) => {
-    setCurrentPage(value); // Atualiza a página atual com o valor da paginação
+    setCurrentPage(value);
   };
 
-  // Função para redirecionar para a tela do carrinho
   const handleCartClick = () => {
-    navigate('/cart'); // Navega para a página de detalhes do carrinho
+    navigate('/cart');
   };
 
-  // Função para controlar a quantidade de cada livro
+  const handleMyBooksClick = () => {
+    navigate('/mybook');
+  };
+
   const handleQuantityChange = (id, quantity) => {
     setQuantities({
       ...quantities,
-      [id]: quantity, // Atualiza a quantidade do livro com base no ID
+      [id]: quantity,
     });
   };
 
-  // Função para adicionar o livro ao carrinho
   const handleAddToCart = async (book) => {
-    const quantity = quantities[book.id] || 1; // Verifica a quantidade selecionada ou 1 por padrão
+    const quantity = quantities[book.id] || 1;
     if (quantity > 0) {
       try {
         const token = localStorage.getItem('token');
@@ -87,20 +89,24 @@ function Home() {
         alert(`${book.titulo} adicionado ao carrinho!`);
       } catch (error) {
         console.error('Erro ao adicionar ao carrinho:', error);
-
-        if (error.message)
-          alert(error.message);
-        else
-          alert(error)
+        alert(error.message || error);
       }
     } else {
       alert(`A quantidade de ${book.titulo} deve ser maior que zero.`);
     }
   };
 
+  // Funções para abrir e fechar o menu de perfil
+  const handleMenuOpen = (event) => {
+    setAnchorEl(event.currentTarget);
+  };
+
+  const handleMenuClose = () => {
+    setAnchorEl(null);
+  };
+
   return (
     <div>
-      {/* Barra de navegação */}
       <AppBar sx={{ backgroundColor: '#2e8b74', color: 'white', fontWeight: 'bold' }} position="static">
         <Toolbar>
           <Typography variant="h6" style={{ flexGrow: 1 }}>
@@ -110,16 +116,38 @@ function Home() {
             variant="outlined"
             placeholder="Buscar por título ou autor"
             value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)} // Atualiza o termo de busca
-            sx={{ backgroundColor: 'white', borderRadius: '4px' }}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            sx={{ backgroundColor: 'white', borderRadius: '4px', mr: 2 }}
           />
           <Button color="inherit" startIcon={<ShoppingCartIcon />} onClick={handleCartClick}>
-            Carrinho
           </Button>
+          <IconButton color="inherit" onClick={handleMenuOpen}>
+            <Avatar>
+              <AccountCircleIcon />
+            </Avatar>
+          </IconButton>
+          <Menu
+            anchorEl={anchorEl}
+            open={Boolean(anchorEl)}
+            onClose={handleMenuClose}
+            anchorOrigin={{
+              vertical: 'bottom',
+              horizontal: 'right',
+            }}
+            transformOrigin={{
+              vertical: 'top',
+              horizontal: 'right',
+            }}
+          >
+            <MenuItem onClick={() => { handleMenuClose(); navigate('/profile'); }}>Perfil</MenuItem>
+            <MenuItem onClick={() => { handleMenuClose(); navigate('/mybooks'); }}>Meus Livros</MenuItem>
+            <MenuItem onClick={() => { handleMenuClose(); navigate('/mysales'); }}>Minhas Vendas</MenuItem>
+            <MenuItem onClick={() => { handleMenuClose(); navigate('/logout'); }}>Logout</MenuItem>
+          </Menu>
         </Toolbar>
       </AppBar>
 
-      {/* Conteúdo principal */}
+      {/* Conteúdo principal e outros componentes... */}
       <Container>
         <Typography variant="h4" style={{ margin: '20px 0' }} align="center">
           Bem-vindo à Livraria Virtual
@@ -181,8 +209,7 @@ function Home() {
           <Pagination count={totalPages} page={currentPage} onChange={handlePageChange} color="primary" />
         </Box>
       </Container>
-
-      {/* Pop-up de detalhes */}
+      {/* Modal de detalhes */}
       {selectedBook && (
         <Dialog open={open} onClose={handleClose}>
           <DialogTitle>{selectedBook.titulo}</DialogTitle>

@@ -5,6 +5,7 @@ import Home from '../Home/Home';
 import { TextField, Button, IconButton, InputAdornment } from '@mui/material'; // Importando TextField e Button do MUI
 import { Visibility, VisibilityOff } from '@mui/icons-material';
 import Cart from '../Cart/Cart'
+import MyBooks from '../MyBooks/MyBooks';
 
 
 function App() {
@@ -105,6 +106,9 @@ function App() {
 
       {/* Rota para a tela do carrinho */}
       <Route path="/cart" element={<Cart />} />
+
+      {/* Rota para a tela dos livros do autor */}
+      <Route path="/mybooks" element={<MyBooks />} />
     </Routes>
   );
 }
