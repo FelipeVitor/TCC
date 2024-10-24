@@ -29,23 +29,34 @@ def pegar_conexao_db():
         db.close()
 
 
-def criar_tabela():
+def popular_tabela():
     from contextos.usuarios.entidade_usuario import Usuario
     from contextos.livros.entidade_livro import Livro
-
-    _Base.metadata.create_all(engine)
+    from contextos.vendas.entidade_vendas import Venda
+    from contextos.vendas.entidade_vendas import VendaItem
 
     usuario = Usuario.criar(
         nome="Westo",
         sobrenome="Coto",
         data_nascimento=date.today(),
-        email="a@b.com",
+        email="westo@coto.com",
         senha="1234",
     )
-    usuario.id = 1
+    usuario.id = 2
+
+    usuario_admin = Usuario.criar(
+        nome="admin",
+        sobrenome="livraria",
+        data_nascimento=date.today(),
+        email="admin@email.com",
+        senha="1234",
+    )
+    usuario_admin.id = 1
+
     try:
         db = _Session()
         db.add(usuario)
+        db.add(usuario_admin)
         db.commit()
     except Exception as e:
         e
@@ -74,3 +85,39 @@ def criar_tabela():
     except Exception as e:
         e
         pass
+
+    try:
+        db = _Session()
+        livros = db.query(Livro).limit(5).all()
+
+        venda = Venda.criar(usuario_id=2)
+
+        for livro in livros:
+            item = VendaItem.criar(
+                venda_id=venda.id,
+                livro_id=livro.id,
+                quantidade=2,
+                preco_unitario=livro.preco,
+            )
+            venda.adicionar_item(item)
+
+        db = _Session()
+        db.add(venda)
+        db.commit()
+
+    except Exception as e:
+        e
+        pass
+
+    db = _Session()
+    x = db.query(Venda).first()
+    x
+
+
+def criar_tabela():
+    from contextos.usuarios.entidade_usuario import Usuario
+    from contextos.livros.entidade_livro import Livro
+    from contextos.vendas.entidade_vendas import Venda
+    from contextos.vendas.entidade_vendas import VendaItem
+
+    _Base.metadata.create_all(engine)

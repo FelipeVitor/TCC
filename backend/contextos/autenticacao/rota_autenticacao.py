@@ -23,6 +23,8 @@ def login(body: LoginData, db: _Session = Depends(pegar_conexao_db)) -> TokenDat
     if not usuario.senha == body.senha:
         raise HTTPException(status_code=400, detail="Senha incorreta")
 
-    token = criar_token_de_acesso_a_rotas_protegidas(data={"sub": usuario.email})
+    token = criar_token_de_acesso_a_rotas_protegidas(
+        data={"sub": usuario.email, "id": usuario.id}
+    )
 
     return TokenData(access_token=token, token_type="bearer")

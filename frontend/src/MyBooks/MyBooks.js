@@ -2,6 +2,8 @@ import React, { useState, useEffect } from 'react';
 import { AppBar, Toolbar, Typography, Button, Grid, Card, CardContent, Box, CardMedia, Container, Dialog, DialogTitle, DialogContent, DialogActions, TextField } from '@mui/material';
 import axios from 'axios';
 import './MyBooks.css'; // Opcional, para estilização personalizada
+import { jwtDecode } from 'jwt-decode';
+import InputMask from 'react-input-mask'; // Importa o react-input-mask
 
 function MyBooks() {
     const [currentPage, setCurrentPage] = useState(1); // Página atual
@@ -78,13 +80,19 @@ function MyBooks() {
     const handleAddNewBook = async () => {
         try {
             const token = localStorage.getItem('token');
+
+            // Adiciona o usuario_id ao objeto newBook
+            const newBookWithUserId = {
+                ...newBook,  // Mantém os dados existentes de newBook
+            };
+
             await axios.post(
-                'http://0.0.0.0:9000/livros/',
-                newBook,
+                'http://0.0.0.0:9000/livros/cadastrar',
+                newBookWithUserId,
                 { headers: { Authorization: `Bearer ${token}` } }
             );
             alert('Livro cadastrado com sucesso!');
-            setNewBook({ titulo: '', autor: '', preco: '', url_imagem: '' }); // Limpa o formulário
+            setNewBook({ titulo: '', genero: '', quantidade: '', preco: '', descricao: '', url_imagem: '' }); // Limpa o formulário
             handleCloseNewBookModal(); // Fecha o modal
             fetchBooks(currentPage); // Atualiza a lista de livros
         } catch (error) {
@@ -132,7 +140,8 @@ function MyBooks() {
                                         {book.autor}
                                     </Typography>
                                     <Typography variant="h6" color="primary">
-                                        R$ {book.preco}
+                                        {/* Formata o preço */}
+                                        R$ {parseFloat(book.preco).toFixed(2).replace('.', ',')}
                                     </Typography>
                                 </CardContent>
                                 <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
@@ -164,64 +173,53 @@ function MyBooks() {
                         label="Genero"
                         fullWidth
                         margin="normal"
-                        value={newBook.autor}
-                        onChange={(e) => setNewBook({ ...newBook, autor: e.target.value })}
+                        value={newBook.genero}
+                        onChange={(e) => setNewBook({ ...newBook, genero: e.target.value })}
                     />
                     <TextField
                         label="Quantidade"
                         fullWidth
                         margin="normal"
-                        value={newBook.autor}
-                        onChange={(e) => setNewBook({ ...newBook, autor: e.target.value })}
+                        value={newBook.quantidade}
+                        onChange={(e) => setNewBook({ ...newBook, quantidade: e.target.value })}
                     />
-                    <TextField
-                        label="Preço"
-                        fullWidth
-                        margin="normal"
-                        value={newBook.autor}
-                        onChange={(e) => setNewBook({ ...newBook, autor: e.target.value })}
-                    />
+                    {/* Campo de Preço com máscara */}
+                    <InputMask
+                        mask="R$ 999,99"
+                        value={newBook.preco}
+                        onChange={(e) => setNewBook({ ...newBook, preco: e.target.value })}
+                    >
+                        {(inputProps) => (
+                            <TextField
+                                {...inputProps}
+                                label="Preço"
+                                fullWidth
+                                margin="normal"
+                            />
+                        )}
+                    </InputMask>
                     <TextField
                         label="Descrição"
                         fullWidth
                         margin="normal"
-                        value={newBook.autor}
-                        onChange={(e) => setNewBook({ ...newBook, autor: e.target.value })}
+                        value={newBook.descricao}
+                        onChange={(e) => setNewBook({ ...newBook, descricao: e.target.value })}
                     />
                     <TextField
                         label="Url da Imagem"
                         fullWidth
                         margin="normal"
-                        value={newBook.autor}
-                        onChange={(e) => setNewBook({ ...newBook, autor: e.target.value })}
+                        value={newBook.url_imagem}
+                        onChange={(e) => setNewBook({ ...newBook, url_imagem: e.target.value })}
                     />
                 </DialogContent>
                 <DialogActions>
-                    <Button onClick={handleCloseNewBookModal} color="primary">
-                        Cancelar
-                    </Button>
-                    <Button onClick={handleAddNewBook} color="primary">
-                        Cadastrar
+                    <Button onClick={handleCloseNewBookModal}>Cancelar</Button>
+                    <Button onClick={handleAddNewBook} sx={{ backgroundColor: '#2e8b74', color: 'white' }}>
+                        Adicionar Livro
                     </Button>
                 </DialogActions>
             </Dialog>
-
-            {/* Pop-up de detalhes */}
-            {selectedBook && (
-                <Dialog open={open} onClose={handleClose}>
-                    <DialogTitle>{selectedBook.titulo}</DialogTitle>
-                    <DialogContent>
-                        <Typography variant="h6">{selectedBook.autor}</Typography>
-                        <Typography variant="body1">{selectedBook.descricao}</Typography>
-                        {selectedBook.url_imagem && (
-                            <Box component="img" src={selectedBook.url_imagem} alt={selectedBook.titulo} sx={{ maxWidth: '100%', height: 'auto' }} />
-                        )}
-                    </DialogContent>
-                    <DialogActions>
-                        <Button onClick={handleClose}>Fechar</Button>
-                    </DialogActions>
-                </Dialog>
-            )}
         </div>
     );
 }

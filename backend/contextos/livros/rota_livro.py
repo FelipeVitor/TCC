@@ -23,8 +23,11 @@ def cadastrar_livro(
     db: _Session = Depends(pegar_conexao_db),
     info_do_login: str = Depends(JWTBearer()),
 ):
-    # Verifica se o autor existe e se é um autor
-    usuario = db.query(Usuario).filter(Usuario.id == body.usuario_id).first()
+    # Recupera o email do usuário logado
+    email_usuario = info_do_login.get("sub")
+
+    # Busca o usuário no banco de dados com base no email
+    usuario = db.query(Usuario).filter(Usuario.email.ilike(email_usuario)).first()
 
     if not usuario:
         raise HTTPException(status_code=400, detail="Usuário não encontrado.")
@@ -34,7 +37,7 @@ def cadastrar_livro(
 
     livro = Livro(
         titulo=body.titulo,
-        usuario_id=body.usuario_id,
+        usuario_id=usuario.id,
         genero=body.genero,
         quantidade=body.quantidade,
         preco=body.preco,

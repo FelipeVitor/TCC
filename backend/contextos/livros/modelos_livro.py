@@ -1,9 +1,9 @@
 from pydantic import BaseModel
 
+
 # Modelo para cadastrar um livro
 class CadastrarLivro(BaseModel):
     titulo: str
-    usuario_id: int
     genero: str
     quantidade: int
     preco: float  # Altere conforme necessário, se usar Decimal

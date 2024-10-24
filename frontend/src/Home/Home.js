@@ -172,7 +172,8 @@ function Home() {
                     {book.autor}
                   </Typography>
                   <Typography variant="h6" color="primary">
-                    R$ {book.preco}
+                    R$ {parseFloat(book.preco).toFixed(2)}
+
                   </Typography>
 
                   {/* Controle de quantidade */}

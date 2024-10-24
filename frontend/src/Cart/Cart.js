@@ -142,7 +142,7 @@ function Cart() {
                                                 {item.livro.autor}
                                             </Typography>
                                             <Typography variant="h6" color="primary">
-                                                R$ {item.livro.preco}
+                                                R$ {parseFloat(item.livro.preco).toFixed(2)}
                                             </Typography>
                                         </CardContent>
                                         <Box sx={{ display: 'flex', justifyContent: 'space-between', p: 2 }}>
