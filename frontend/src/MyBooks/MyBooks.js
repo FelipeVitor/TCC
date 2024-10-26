@@ -2,8 +2,8 @@ import React, { useState, useEffect } from 'react';
 import { AppBar, Toolbar, Typography, Button, Grid, Card, CardContent, Box, CardMedia, Container, Dialog, DialogTitle, DialogContent, DialogActions, TextField } from '@mui/material';
 import axios from 'axios';
 import './MyBooks.css'; // Opcional, para estilização personalizada
-import { jwtDecode } from 'jwt-decode';
 import InputMask from 'react-input-mask'; // Importa o react-input-mask
+import Swal from 'sweetalert2';
 
 function MyBooks() {
     const [currentPage, setCurrentPage] = useState(1); // Página atual
@@ -60,18 +60,36 @@ function MyBooks() {
 
     // Função para excluir um livro
     const handleDeleteBook = async (bookId) => {
-        const confirmDelete = window.confirm("Tem certeza que deseja excluir este livro?");
-        if (confirmDelete) {
+        const result = await Swal.fire({
+            title: 'Tem certeza que deseja excluir este livro?',
+            text: "Essa ação não pode ser desfeita",
+            icon: 'warning',
+            showCancelButton: true,
+            confirmButtonText: 'Sim',
+            cancelButtonText: 'Cancelar'
+        });
+
+        if (result.isConfirmed) {
             try {
                 const token = localStorage.getItem('token');
                 await axios.delete(`http://0.0.0.0:9000/livros/${bookId}`, {
                     headers: { Authorization: `Bearer ${token}` },
                 });
-                alert('Livro excluído com sucesso!');
+                Swal.fire({
+                    title: 'Sucesso',
+                    text: 'Livro excluído com sucesso!',
+                    icon: 'success',
+                    confirmButtonText: 'OK'
+                });
                 fetchBooks(currentPage); // Atualiza a lista de livros após exclusão
             } catch (error) {
                 console.error('Erro ao excluir o livro:', error);
-                alert('Erro ao excluir o livro.');
+                Swal.fire({
+                    title: 'Erro',
+                    text: 'Erro ao excluir o livro.',
+                    icon: 'error',
+                    confirmButtonText: 'OK'
+                });
             }
         }
     };
@@ -80,10 +98,12 @@ function MyBooks() {
     const handleAddNewBook = async () => {
         try {
             const token = localStorage.getItem('token');
+            const priceInFloat = parseFloat(newBook.preco.replace('R$ ', '').replace('.', '').replace(',', '.'));
 
             // Adiciona o usuario_id ao objeto newBook
             const newBookWithUserId = {
                 ...newBook,  // Mantém os dados existentes de newBook
+                preco: priceInFloat,
             };
 
             await axios.post(
@@ -91,13 +111,23 @@ function MyBooks() {
                 newBookWithUserId,
                 { headers: { Authorization: `Bearer ${token}` } }
             );
-            alert('Livro cadastrado com sucesso!');
+            Swal.fire({
+                title: 'Sucesso',
+                text: 'Livro cadastrado com sucesso!',
+                icon: 'success',
+                confirmButtonText: 'OK'
+            });
             setNewBook({ titulo: '', genero: '', quantidade: '', preco: '', descricao: '', url_imagem: '' }); // Limpa o formulário
             handleCloseNewBookModal(); // Fecha o modal
             fetchBooks(currentPage); // Atualiza a lista de livros
         } catch (error) {
             console.error('Erro ao cadastrar o livro:', error);
-            alert('Erro ao cadastrar o livro.');
+            Swal.fire({
+                title: 'Erro',
+                text: 'Erro ao cadastrar o livro.',
+                icon: 'error',
+                confirmButtonText: 'OK'
+            });
         }
     };
 

@@ -1,9 +1,10 @@
 from fastapi import APIRouter, Depends, HTTPException, Response
+from sqlalchemy.orm import Session
 
 from contextos.usuarios.entidade_usuario import Usuario
 from contextos.usuarios.modelos_usuario import CadastrarUsuario
 from libs.autenticacao.config import JWTBearer
-from libs.database.sqlalchemy import _Session, pegar_conexao_db
+from libs.database.sqlalchemy import pegar_conexao_db
 
 roteador = APIRouter(prefix="/usuarios", tags=["Usuario"])
 
@@ -12,7 +13,7 @@ roteador = APIRouter(prefix="/usuarios", tags=["Usuario"])
 @roteador.post("/cadastrar")
 def cadastrar_usuario(
     body: CadastrarUsuario,
-    db: _Session = Depends(pegar_conexao_db),
+    db: Session = Depends(pegar_conexao_db),
     info_do_login: str = Depends(JWTBearer()),
 ):
     existe_usuario_no_banco = (
@@ -39,7 +40,7 @@ def cadastrar_usuario(
 @roteador.post("/ativar/autor/{id}")
 def ativar_autor(
     id: int,
-    db: _Session = Depends(pegar_conexao_db),
+    db: Session = Depends(pegar_conexao_db),
     info_do_login: str = Depends(JWTBearer()),
 ):
     existe_usuario_no_banco = db.query(Usuario).filter(Usuario.id == id).first()

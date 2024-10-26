@@ -1,15 +1,16 @@
 from fastapi import APIRouter, Depends, HTTPException
+from sqlalchemy.orm import Session
 
 from contextos.autenticacao.modelos_autenticacao import LoginData, TokenData
 from contextos.usuarios.entidade_usuario import Usuario
 from libs.autenticacao.config import criar_token_de_acesso_a_rotas_protegidas
-from libs.database.sqlalchemy import _Session, pegar_conexao_db
+from libs.database.sqlalchemy import pegar_conexao_db
 
 roteador = APIRouter(prefix="/autenticacao", tags=["Autenticação"])
 
 
 @roteador.post("/login")
-def login(body: LoginData, db: _Session = Depends(pegar_conexao_db)) -> TokenData:
+def login(body: LoginData, db: Session = Depends(pegar_conexao_db)) -> TokenData:
     usuario = db.query(Usuario).filter(Usuario.email.ilike(body.email)).first()
     usuario.deletado = False
 

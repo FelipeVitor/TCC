@@ -1,61 +1,18 @@
 import uuid
+from datetime import datetime
+
 from sqlalchemy import (
     Column,
-    Integer,
-    ForeignKey,
-    Numeric,
     DateTime,
+    ForeignKey,
+    Integer,
+    Numeric,
+    types,
 )
 from sqlalchemy.orm import relationship
+from sqlalchemy.types import CHAR, TypeDecorator
+
 from libs.database.sqlalchemy import _Base
-from datetime import datetime
-from sqlalchemy.types import TypeDecorator, CHAR, TEXT
-
-from sqlalchemy import types
-from typing import Optional, Type
-
-
-# class UUID(types.UserDefinedType):
-#     cache_ok = True
-#     __visit_name__ = "UUID"
-
-#     def __init__(self, class_type: Optional[Type[uuid.UUID]] = None):
-#         if class_type:
-#             assert issubclass(class_type, uuid.UUID), ValueError(
-#                 "Deve ser subclasse de uuid.UUID"
-#             )
-#             self.class_type = class_type
-#         else:
-#             self.class_type = uuid.UUID
-#         self.as_uuid = True
-
-#     def bind_processor(self, dialect):
-#         def process(value):
-#             if value is not None:
-#                 value = str(value)
-#             return value
-
-#         return process
-
-#     def result_processor(self, dialect, coltype):
-#         def process(value):
-#             if value is not None:
-#                 # No SQLite, o valor de retorno pode ser um string, então é necessário converter para uuid.UUID
-#                 try:
-#                     value = (
-#                         self.class_type(value)
-#                         if not isinstance(value, self.class_type)
-#                         else value
-#                     )
-#                 except ValueError:
-#                     return None
-#             return value
-
-#         return process
-
-#     def get_col_spec(self, **kw):
-#         # Para SQLite, um tipo de coluna adequado para armazenar UUIDs é TEXT
-#         return "TEXT"
 
 
 # Tipo personalizado para UUID com SQLAlchemy e SQLite

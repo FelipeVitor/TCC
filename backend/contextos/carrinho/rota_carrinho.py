@@ -12,7 +12,7 @@ from contextos.carrinho.modelo_carrinho import (
 from contextos.livros.entidade_livro import Livro
 from contextos.usuarios.entidade_usuario import Usuario
 from libs.autenticacao.config import JWTBearer
-from libs.database.sqlalchemy import _Session, pegar_conexao_db
+from libs.database.sqlalchemy import pegar_conexao_db
 
 roteador = APIRouter(prefix="/carrinho", tags=["Carrinho"])
 
@@ -21,7 +21,7 @@ roteador = APIRouter(prefix="/carrinho", tags=["Carrinho"])
 @roteador.post("/adicionar")
 def adicionar_item_no_carrinho(
     item: AdicionarItemCarrinho,
-    db: _Session = Depends(pegar_conexao_db),
+    db: Session = Depends(pegar_conexao_db),
     info_do_login: str = Depends(JWTBearer()),
 ):
     usuario_email = info_do_login.get("sub")
@@ -70,7 +70,7 @@ def adicionar_item_no_carrinho(
 # Endpoint para visualizar o carrinho
 @roteador.get("/")
 def buscar_carrinho_do_usuario(
-    db: _Session = Depends(pegar_conexao_db),
+    db: Session = Depends(pegar_conexao_db),
     info_do_login: str = Depends(JWTBearer()),
 ) -> CarrinhoFinal:
     usuario_email = info_do_login.get("sub")
@@ -80,12 +80,7 @@ def buscar_carrinho_do_usuario(
         raise HTTPException(status_code=404, detail="Usuário não encontrado")
 
     # Busca os itens do carrinho e seus livros associados
-    carrinhos_com_livros = (
-        db.query(Carrinho, Livro)
-        .join(Livro, Carrinho.livro_id == Livro.id)
-        .filter(Carrinho.usuario_id == usuario.id)
-        .all()
-    )
+    carrinhos_com_livros = buscar_carriho_do_usuario_repo(db, usuario.id)
 
     carrinho_final = CarrinhoFinal(itens=[], total_do_carrinho=0)
 
@@ -133,23 +128,20 @@ def buscar_carrinho_do_usuario(
 def remover_item_no_carrinho(
     livro_id: int,
     quantidade: int,
-    db: _Session = Depends(pegar_conexao_db),
+    db: Session = Depends(pegar_conexao_db),
     info_do_login: str = Depends(JWTBearer()),
 ):
     usuario_email = info_do_login.get("sub")
-    usuario = db.query(Usuario).filter(Usuario.email.ilike(usuario_email)).first()
+    usuario: Usuario = (
+        db.query(Usuario).filter(Usuario.email.ilike(usuario_email)).first()
+    )
 
     # Verificar se o livro existe e tem quantidade disponível
     livro = db.query(Livro).filter(Livro.id == livro_id).first()
     if not livro:
         raise HTTPException(status_code=404, detail="Livro não encontrado")
 
-    carrinhos = (
-        db.query(Carrinho)
-        .filter(Carrinho.livro_id == livro.id)
-        .filter(Carrinho.usuario_id == usuario.id)
-        .all()
-    )
+    carrinhos = buscar_carriho_do_usuario_repo(db, usuario.id)
 
     if len(carrinhos) == 0:
         raise HTTPException(status_code=404, detail="Item não encontrado no carrinho")
@@ -171,3 +163,17 @@ def remover_item_no_carrinho(
             tx.commit()
 
     return Response(status_code=200)
+
+
+def buscar_carriho_do_usuario_repo(
+    db: Session, usuario_id: int
+) -> list[tuple[Carrinho, Livro]]:
+    from contextos.carrinho.entidade_carrinho import Carrinho
+    from contextos.livros.entidade_livro import Livro
+
+    return (
+        db.query(Carrinho, Livro)
+        .join(Livro, Carrinho.livro_id == Livro.id)
+        .filter(Carrinho.usuario_id == usuario_id)
+        .all()
+    )

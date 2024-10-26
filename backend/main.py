@@ -5,6 +5,7 @@ from libs.database.sqlalchemy import criar_tabela, popular_tabela
 from contextos.usuarios import rota_usuario
 from contextos.autenticacao import rota_autenticacao
 from contextos.livros import rota_livro
+from contextos.vendas import rota_vendas
 
 from contextos.carrinho import rota_carrinho
 from fastapi.middleware.cors import CORSMiddleware
@@ -26,6 +27,7 @@ app.include_router(rota_usuario.roteador)
 app.include_router(rota_autenticacao.roteador)
 app.include_router(rota_livro.roteador)
 app.include_router(rota_carrinho.roteador)
+app.include_router(rota_vendas.roteador)
 
 
 @app.get("/")

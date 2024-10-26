@@ -1,12 +1,14 @@
-from passlib.context import CryptContext
-from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
+from datetime import datetime, timedelta
+
+from fastapi import HTTPException, Request
+from fastapi.security import (
+    HTTPAuthorizationCredentials,
+    HTTPBearer,
+    OAuth2PasswordBearer,
+    OAuth2PasswordRequestForm,
+)
 from jose import JWTError, jwt
 from passlib.context import CryptContext
-from datetime import datetime, timedelta
-from fastapi import Request
-from fastapi import Request, HTTPException
-from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
-
 
 SECRET_KEY = "TiaraEhTierA"
 ALGORITHM = "HS256"
@@ -62,10 +64,10 @@ class JWTBearer(HTTPBearer):
             if not dados_token:
                 raise HTTPException(status_code=403, detail="Invalid token")
 
-            from libs.database.sqlalchemy import _Session
             from contextos.usuarios.entidade_usuario import Usuario
+            from libs.database.sqlalchemy import Sessao
 
-            db = _Session()
+            db = Sessao()
             usuario = (
                 db.query(Usuario)
                 .filter(

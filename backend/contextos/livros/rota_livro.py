@@ -11,7 +11,7 @@ from contextos.livros.entidade_livro import (
 from contextos.livros.modelos_livro import CadastrarLivro
 from contextos.usuarios.entidade_usuario import Usuario
 from libs.autenticacao.config import JWTBearer
-from libs.database.sqlalchemy import _Session, pegar_conexao_db
+from libs.database.sqlalchemy import pegar_conexao_db
 
 roteador = APIRouter(prefix="/livros", tags=["Livro"])
 
@@ -20,7 +20,7 @@ roteador = APIRouter(prefix="/livros", tags=["Livro"])
 @roteador.post("/cadastrar")
 def cadastrar_livro(
     body: CadastrarLivro,
-    db: _Session = Depends(pegar_conexao_db),
+    db: Session = Depends(pegar_conexao_db),
     info_do_login: str = Depends(JWTBearer()),
 ):
     # Recupera o email do usuário logado
@@ -57,7 +57,7 @@ def listar_livros(
     quantidade: int = Query(10, ge=1),
     pagina: int = Query(1, ge=1),
     busca: Optional[str] = Query(None),  # Parâmetro de busca opcional
-    db: _Session = Depends(pegar_conexao_db),
+    db: Session = Depends(pegar_conexao_db),
 ):
     # Calcula o offset com base na página e no tamanho da página (ajustando para que a primeira página seja 1)
     offset = (pagina - 1) * quantidade
@@ -96,7 +96,7 @@ def listar_livros(
 
 # Rota para obter um livro pelo ID
 @roteador.get("/obter-livros/{id}")
-def obter_livro(id: int, db: _Session = Depends(pegar_conexao_db)):
+def obter_livro(id: int, db: Session = Depends(pegar_conexao_db)):
     livro = db.query(Livro).filter(Livro.id == id).first()
 
     if not livro:
@@ -110,7 +110,7 @@ def obter_livro(id: int, db: _Session = Depends(pegar_conexao_db)):
 def atualizar_livro(
     id: int,
     body: CadastrarLivro,
-    db: _Session = Depends(pegar_conexao_db),
+    db: Session = Depends(pegar_conexao_db),
     info_do_login: str = Depends(JWTBearer()),
 ):
     # Recupera o email do usuário logado
@@ -172,7 +172,7 @@ def atualizar_livro(
 @roteador.delete("/{id}")
 def deletar_livro(
     id: int,
-    db: _Session = Depends(pegar_conexao_db),
+    db: Session = Depends(pegar_conexao_db),
     info_do_login: str = Depends(JWTBearer()),
 ):
     livro = db.query(Livro).filter(Livro.id == id).first()
@@ -196,7 +196,7 @@ def listar_livros_do_autor(
     quantidade: int = Query(10, ge=1),
     pagina: int = Query(1, ge=1),
     busca: Optional[str] = Query(None),  # Parâmetro de busca opcional
-    db: _Session = Depends(pegar_conexao_db),
+    db: Session = Depends(pegar_conexao_db),
     info_do_login: str = Depends(JWTBearer()),
 ):
     # Calcula o offset com base na página e no tamanho da página (ajustando para que a primeira página seja 1)

@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Typography, Toolbar, Grid, Card, CardContent, CardMedia, Box, Button, TextField, AppBar } from '@mui/material';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
+import Swal from 'sweetalert2';
 
 function Cart() {
     const [cartItems, setCartItems] = useState([]);
@@ -56,12 +57,21 @@ function Cart() {
                 newQuantity = item.carrinho.quantidade - newQuantity;
 
                 if (newQuantity === item.carrinho.quantidade) {
-                    if (window.confirm("Deseja apagar o item do carrinho?") === false) {
+                    const result = await Swal.fire({
+                        title: 'Deseja apagar o item do carrinho?',
+                        text: "Essa ação não pode ser desfeita",
+                        icon: 'warning',
+                        showCancelButton: true,
+                        confirmButtonText: 'Sim',
+                        cancelButtonText: 'Cancelar'
+                    });
+
+                    if (result.isDismissed) {
                         const restoredCartItems = cartItems.map((item) =>
                             item.livro.id === id ? { ...item, carrinho: { ...item.carrinho, quantidade: previousQuantity } } : item
                         );
                         setCartItems(restoredCartItems);
-                        return
+                        return;
                     }
                 }
 
@@ -83,10 +93,18 @@ function Cart() {
 
             console.error('Erro ao atualizar a quantidade do item:', error);
 
-            if (error.message)
-                alert(error.message);
-            else {
-                alert('Erro de rede ou desconhecido');
+            if (error.message) {
+                await Swal.fire({
+                    icon: 'error',
+                    title: 'Erro',
+                    text: error.message
+                });
+            } else {
+                await Swal.fire({
+                    icon: 'error',
+                    title: 'Erro',
+                    text: 'Erro de rede ou desconhecido'
+                });
             }
         }
     };
@@ -95,10 +113,47 @@ function Cart() {
         return cartItems.reduce((total, item) => total + item.carrinho.quantidade * item.livro.preco, 0).toFixed(2);
     };
 
-    const handleCheckout = () => {
-        alert('Compra finalizada com sucesso!');
-        localStorage.removeItem('cartItems');
-        navigate('/home');
+    const handleCheckout = async () => {
+        try {
+            // Fazendo requisição POST para finalizar a compra
+            await axios.post(
+                'http://0.0.0.0:9000/venda/comprar-do-carrinho/',
+                {},
+                {
+                    headers: {
+                        Authorization: `Bearer ${localStorage.getItem('token')}`,
+                    },
+                }
+            );
+
+            // Exibe mensagem de sucesso
+            await Swal.fire({
+                icon: 'success',
+                title: 'Compra finalizada com sucesso!'
+            });
+
+            // Remove itens do carrinho do localStorage
+            localStorage.removeItem('cartItems');
+
+            // Redireciona para a página home
+            navigate('/home');
+        } catch (error) {
+            if (error.response && error.response.data) {
+                // Exibe mensagem de erro detalhada retornada pela API
+                await Swal.fire({
+                    icon: 'error',
+                    title: 'Erro',
+                    text: `Erro: ${error.response.data.detail}`
+                });
+            } else {
+                // Mensagem de erro genérica
+                await Swal.fire({
+                    icon: 'error',
+                    title: 'Erro',
+                    text: 'Erro ao finalizar a compra. Tente novamente.'
+                });
+            }
+        }
     };
 
     return (
@@ -120,7 +175,7 @@ function Cart() {
                     </Typography>
 
                     {cartItems.length === 0 ? (
-                        <Typography variant="h6">
+                        <Typography variant="h6" marginLeft={2}>
                             Seu carrinho está vazio.
                         </Typography>
                     ) : (

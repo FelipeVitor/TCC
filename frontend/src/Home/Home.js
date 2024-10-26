@@ -5,6 +5,7 @@ import AccountCircleIcon from '@mui/icons-material/AccountCircle'; // Ícone de 
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import './Home.css';
+import Swal from 'sweetalert2';
 
 function Home() {
   const [currentPage, setCurrentPage] = useState(1);
@@ -52,7 +53,6 @@ function Home() {
     }
   };
 
-
   const handleClose = () => {
     setOpen(false);
   };
@@ -86,13 +86,28 @@ function Home() {
           { livro_id: book.id, quantidade: quantity },
           { headers: { Authorization: `Bearer ${token}` } }
         );
-        alert(`${book.titulo} adicionado ao carrinho!`);
+        Swal.fire({
+          title: 'Sucesso',
+          text: `${book.titulo} adicionado ao carrinho`,
+          icon: 'success',
+          confirmButtonText: 'OK'
+        });
       } catch (error) {
         console.error('Erro ao adicionar ao carrinho:', error);
-        alert(error.message || error);
+        Swal.fire({
+          title: 'Erro',
+          text: error.message || error,
+          icon: 'error',
+          confirmButtonText: 'OK'
+        });
       }
     } else {
-      alert(`A quantidade de ${book.titulo} deve ser maior que zero.`);
+      Swal.fire({
+        title: 'Atenção',
+        text: `A quantidade de ${book.titulo} deve ser maior que zero.`,
+        icon: 'warning',
+        confirmButtonText: 'OK'
+      });
     }
   };
 
@@ -103,6 +118,39 @@ function Home() {
 
   const handleMenuClose = () => {
     setAnchorEl(null);
+  };
+
+  const directPurchase = async (book) => {
+    try {
+      // Fazendo requisição POST para finalizar a venda direta
+      await axios.post(
+        `http://0.0.0.0:9000/venda/venda-direta/${book.id}`,
+        { quantidade: 1 },
+        { headers: { Authorization: `Bearer ${localStorage.getItem('token')}` } }
+      );
+      Swal.fire({
+        title: 'Sucesso',
+        text: 'Compra realizada com sucesso',
+        icon: 'success',
+        confirmButtonText: 'OK'
+      });
+    } catch (error) {
+      if (error.response && error.response.data) {
+        Swal.fire({
+          title: 'Erro',
+          text: `Erro: ${error.response.data.detail}`,
+          icon: 'error',
+          confirmButtonText: 'OK'
+        });
+      } else {
+        Swal.fire({
+          title: 'Erro',
+          text: 'Erro ao realizar a compra. Tente novamente.',
+          icon: 'error',
+          confirmButtonText: 'OK'
+        });
+      }
+    }
   };
 
   return (
@@ -173,7 +221,6 @@ function Home() {
                   </Typography>
                   <Typography variant="h6" color="primary">
                     R$ {parseFloat(book.preco).toFixed(2)}
-
                   </Typography>
 
                   {/* Controle de quantidade */}
@@ -188,38 +235,41 @@ function Home() {
                     sx={{ mt: 2, width: '100px' }}
                   />
 
-                  <Button sx={{ backgroundColor: '#2e8b74', color: 'white', fontWeight: 'bold', '&:hover': { backgroundColor: '#215f50' }, mt: 2 }} variant="contained" fullWidth onClick={() => handleOpen(book)}>
-                    Detalhes
+                  <Button sx={{ backgroundColor: '#2e8b74', color: 'white', fontWeight: 'bold', '&:hover': { backgroundColor: '#265f5d' } }} onClick={() => handleAddToCart(book)} fullWidth>
+                    Adicionar ao Carrinho
+                  </Button>
+
+                  <Button sx={{ mt: 1 }} onClick={() => directPurchase(book)} variant="contained" color="secondary" fullWidth>
+                    Comprar Agora
                   </Button>
                 </CardContent>
-                <Button
-                  sx={{ backgroundColor: '#2e8b74', color: 'white', fontWeight: 'bold', '&:hover': { backgroundColor: '#215f50' } }}
-                  variant="contained"
-                  fullWidth
-                  onClick={() => handleAddToCart(book)} // Adiciona ao carrinho com a quantidade selecionada
-                >
-                  Adicionar ao Carrinho
-                </Button>
               </Card>
             </Grid>
           ))}
         </Grid>
 
-        {/* Componente de paginação */}
+        {/* Paginação */}
         <Box sx={{ display: 'flex', justifyContent: 'center', mt: 4 }}>
-          <Pagination count={totalPages} page={currentPage} onChange={handlePageChange} color="primary" />
+          <Pagination
+            count={totalPages}
+            page={currentPage}
+            onChange={handlePageChange}
+            color="primary"
+          />
         </Box>
       </Container>
-      {/* Modal de detalhes */}
+
+      {/* Diálogo com informações do livro */}
       {selectedBook && (
-        <Dialog open={open} onClose={handleClose}>
+        <Dialog open={open} onClose={handleClose} maxWidth="md" fullWidth>
           <DialogTitle>{selectedBook.titulo}</DialogTitle>
           <DialogContent>
-            <Typography variant="h6">{selectedBook.autor}</Typography>
+            {/* Informações do livro */}
+            <Typography variant="h6">Autor: {selectedBook.autor}</Typography>
             <Typography variant="body1">{selectedBook.descricao}</Typography>
-            {selectedBook.url_imagem && (
-              <Box component="img" src={selectedBook.url_imagem} alt={selectedBook.titulo} sx={{ mt: 2, width: '100%', maxHeight: '300px' }} />
-            )}
+            <Typography variant="h6" color="primary">
+              R$ {parseFloat(selectedBook.preco).toFixed(2)}
+            </Typography>
           </DialogContent>
           <DialogActions>
             <Button onClick={handleClose} color="primary">
