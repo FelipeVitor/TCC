@@ -13,8 +13,9 @@ from fastapi.middleware.cors import CORSMiddleware
 
 criar_tabela()
 popular_tabela()
+print("mackenie é 2")
 
-app = FastAPI()
+app = FastAPI(version="0.9", title="API de Livros")
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],

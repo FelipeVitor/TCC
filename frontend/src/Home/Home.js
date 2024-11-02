@@ -19,6 +19,7 @@ function Home() {
   const [anchorEl, setAnchorEl] = useState(null); // Estado para controlar o submenu do perfil
   const booksPerPage = 4;
   const navigate = useNavigate();
+  const defaultImage = "https://img.freepik.com/fotos-premium/uma-pilha-de-livros-com-a-palavra-citacao-na-parte-superior_583952-80623.jpg?semt=ais_hybrid";
 
   useEffect(() => {
     const handler = setTimeout(() => {
@@ -197,19 +198,15 @@ function Home() {
 
       {/* Conteúdo principal e outros componentes... */}
       <Container>
-        <Typography variant="h4" style={{ margin: '20px 0' }} align="center">
-          Bem-vindo à Livraria Virtual
-        </Typography>
-
         {/* Lista de livros */}
         <Grid container spacing={3} justifyContent="center">
           {books.map((book) => (
-            <Grid item xs={12} sm={6} md={3} key={book.id}>
+            <Grid item xs={12} sm={6} mt={2} md={3} key={book.id}>
               <Card sx={{ display: 'flex', flexDirection: 'column', justifyContent: 'space-between', boxShadow: 3, height: '100%' }}>
                 <Box sx={{ position: 'relative', paddingTop: '125%' }}>
                   <CardMedia
                     component="img"
-                    image={book.url_imagem} // Usando a URL da imagem da API
+                    image={book.url_imagem === "" ? book.url_imagem : defaultImage} // Usando a URL da imagem da API
                     alt={book.titulo}
                     sx={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', objectFit: 'cover' }}
                   />
@@ -235,7 +232,7 @@ function Home() {
                     sx={{ mt: 2, width: '100px' }}
                   />
 
-                  <Button sx={{ backgroundColor: '#2e8b74', color: 'white', fontWeight: 'bold', '&:hover': { backgroundColor: '#265f5d' } }} onClick={() => handleAddToCart(book)} fullWidth>
+                  <Button sx={{ backgroundColor: '#2e8b74', color: 'white', fontWeight: 'bold', mt: 1, '&:hover': { backgroundColor: '#265f5d' } }} onClick={() => handleAddToCart(book)} fullWidth>
                     Adicionar ao Carrinho
                   </Button>
 
@@ -249,7 +246,7 @@ function Home() {
         </Grid>
 
         {/* Paginação */}
-        <Box sx={{ display: 'flex', justifyContent: 'center', mt: 4 }}>
+        <Box sx={{ display: 'flex', justifyContent: 'center', mt: 2 }}>
           <Pagination
             count={totalPages}
             page={currentPage}

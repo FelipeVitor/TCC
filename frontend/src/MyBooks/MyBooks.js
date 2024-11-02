@@ -1,64 +1,66 @@
 import React, { useState, useEffect } from 'react';
 import { AppBar, Toolbar, Typography, Button, Grid, Card, CardContent, Box, CardMedia, Container, Dialog, DialogTitle, DialogContent, DialogActions, TextField } from '@mui/material';
 import axios from 'axios';
-import './MyBooks.css'; // Opcional, para estilização personalizada
-import InputMask from 'react-input-mask'; // Importa o react-input-mask
+import InputMask from 'react-input-mask';
 import Swal from 'sweetalert2';
 
 function MyBooks() {
-    const [currentPage, setCurrentPage] = useState(1); // Página atual
-    const [totalPages, setTotalPages] = useState(0); // Total de páginas
-    const [books, setBooks] = useState([]); // Livros da página atual
-    const [open, setOpen] = useState(false); // Estado para abrir/fechar o modal
-    const [selectedBook, setSelectedBook] = useState(null); // Livro selecionado
-    const [newBook, setNewBook] = useState({ titulo: '', autor: '', preco: '', url_imagem: '' }); // Estado para um novo livro
-    const [openNewBookModal, setOpenNewBookModal] = useState(false); // Modal para cadastro de novo livro
-    const booksPerPage = 4; // Número de livros por página
+    const [currentPage, setCurrentPage] = useState(1);
+    const [totalPages, setTotalPages] = useState(0);
+    const [books, setBooks] = useState([]);
+    const [open, setOpen] = useState(false);
+    const [openEdit, setOpenEdit] = useState(false);
+    const [selectedBook, setSelectedBook] = useState(null);
+    const [newBook, setNewBook] = useState({ titulo: '', autor: '', preco: '', url_imagem: '' });
+    const [openNewBookModal, setOpenNewBookModal] = useState(false);
+    const booksPerPage = 4;
 
-    // Função para buscar os livros do autor logado
     const fetchBooks = async (pagina, busca = '') => {
         try {
-            const token = localStorage.getItem('token'); // Obtém o token de autenticação
+            const token = localStorage.getItem('token');
             if (!token) {
                 throw new Error("Token de autenticação não encontrado.");
             }
             const response = await axios.get(`http://0.0.0.0:9000/livros/livros-do-autor?quantidade=${parseInt(booksPerPage)}&pagina=${parseInt(pagina)}&busca=${busca}`, {
                 headers: { Authorization: `Bearer ${token}` },
             });
-            setBooks(response.data.data); // Define os livros da página atual
-            setTotalPages(response.data.total_paginas); // Define o total de páginas com base no backend
+            setBooks(response.data.data);
+            setTotalPages(response.data.total_paginas);
         } catch (error) {
             console.error('Erro ao buscar os livros:', error);
         }
     };
 
-    // Buscar livros sempre que a página atual for alterada
     useEffect(() => {
         fetchBooks(currentPage);
     }, [currentPage]);
 
-    // Função para abrir o modal de detalhes
     const handleOpen = (book) => {
         setSelectedBook(book);
         setOpen(true);
     };
 
-    // Função para fechar o modal de detalhes
     const handleClose = () => {
         setOpen(false);
     };
 
-    // Função para abrir o modal de novo livro
+    const handleOpenEdit = (book) => {
+        setSelectedBook(book);
+        setOpenEdit(true);
+    };
+
+    const handleCloseEdit = () => {
+        setOpenEdit(false);
+    };
+
     const handleOpenNewBookModal = () => {
         setOpenNewBookModal(true);
     };
 
-    // Função para fechar o modal de novo livro
     const handleCloseNewBookModal = () => {
         setOpenNewBookModal(false);
     };
 
-    // Função para excluir um livro
     const handleDeleteBook = async (bookId) => {
         const result = await Swal.fire({
             title: 'Tem certeza que deseja excluir este livro?',
@@ -81,7 +83,7 @@ function MyBooks() {
                     icon: 'success',
                     confirmButtonText: 'OK'
                 });
-                fetchBooks(currentPage); // Atualiza a lista de livros após exclusão
+                fetchBooks(currentPage);
             } catch (error) {
                 console.error('Erro ao excluir o livro:', error);
                 Swal.fire({
@@ -94,15 +96,50 @@ function MyBooks() {
         }
     };
 
-    // Função para cadastrar um novo livro
+    const handleEditBook = async (bookId) => {
+        try {
+            const token = localStorage.getItem('token');
+            const precoString = typeof selectedBook.preco === 'string'
+                ? selectedBook.preco
+                : selectedBook.preco.toString();
+
+            const updatedBook = {
+                ...selectedBook,
+                preco: parseFloat(precoString.replace('R$ ', '').replace('.', '').replace(',', '.'))
+            };
+
+            await axios.put(
+                `http://0.0.0.0:9000/livros/editar/${bookId}`,
+                updatedBook,
+                { headers: { Authorization: `Bearer ${token}` } }
+            );
+
+            Swal.fire({
+                title: 'Sucesso',
+                text: 'Livro atualizado com sucesso!',
+                icon: 'success',
+                confirmButtonText: 'OK'
+            });
+            handleCloseEdit();
+            fetchBooks(currentPage);
+        } catch (error) {
+            console.error('Erro ao editar o livro:', error);
+            Swal.fire({
+                title: 'Erro',
+                text: 'Erro ao editar o livro.',
+                icon: 'error',
+                confirmButtonText: 'OK'
+            });
+        }
+    };
+
     const handleAddNewBook = async () => {
         try {
             const token = localStorage.getItem('token');
             const priceInFloat = parseFloat(newBook.preco.replace('R$ ', '').replace('.', '').replace(',', '.'));
 
-            // Adiciona o usuario_id ao objeto newBook
             const newBookWithUserId = {
-                ...newBook,  // Mantém os dados existentes de newBook
+                ...newBook,
                 preco: priceInFloat,
             };
 
@@ -117,9 +154,9 @@ function MyBooks() {
                 icon: 'success',
                 confirmButtonText: 'OK'
             });
-            setNewBook({ titulo: '', genero: '', quantidade: '', preco: '', descricao: '', url_imagem: '' }); // Limpa o formulário
-            handleCloseNewBookModal(); // Fecha o modal
-            fetchBooks(currentPage); // Atualiza a lista de livros
+            setNewBook({ titulo: '', genero: '', quantidade: '', preco: '', descricao: '', url_imagem: '' });
+            handleCloseNewBookModal();
+            fetchBooks(currentPage);
         } catch (error) {
             console.error('Erro ao cadastrar o livro:', error);
             Swal.fire({
@@ -133,7 +170,6 @@ function MyBooks() {
 
     return (
         <div>
-            {/* Barra de navegação */}
             <AppBar position="static" sx={{ backgroundColor: '#2e8b74', color: 'white', fontWeight: 'bold' }}>
                 <Toolbar>
                     <Typography variant="h6" style={{ flexGrow: 1 }}>
@@ -145,13 +181,11 @@ function MyBooks() {
                 </Toolbar>
             </AppBar>
 
-            {/* Conteúdo principal */}
             <Container>
                 <Typography variant="h4" style={{ margin: '20px 0' }} align="center">
                     Meus Livros
                 </Typography>
 
-                {/* Lista de livros */}
                 <Grid container spacing={3} justifyContent="center">
                     {books.map((book) => (
                         <Grid item xs={12} sm={6} md={3} key={book.id}>
@@ -159,7 +193,7 @@ function MyBooks() {
                                 <Box sx={{ position: 'relative', paddingTop: '125%' }}>
                                     <CardMedia
                                         component="img"
-                                        image={book.url_imagem} // Usando a URL da imagem da API
+                                        image={book.url_imagem}
                                         alt={book.titulo}
                                         sx={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', objectFit: 'cover' }}
                                     />
@@ -170,86 +204,97 @@ function MyBooks() {
                                         {book.autor}
                                     </Typography>
                                     <Typography variant="h6" color="primary">
-                                        {/* Formata o preço */}
                                         R$ {parseFloat(book.preco).toFixed(2).replace('.', ',')}
                                     </Typography>
                                 </CardContent>
-                                <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
+                                <Box sx={{ display: 'flex', justifyContent: 'center', gap: 1, paddingBottom: 2 }}>
                                     <Button sx={{ backgroundColor: '#e53935', color: 'white' }} onClick={() => handleDeleteBook(book.id)}>
                                         Excluir
                                     </Button>
                                     <Button sx={{ backgroundColor: '#2e8b74', color: 'white' }} onClick={() => handleOpen(book)}>
                                         Detalhes
                                     </Button>
+                                    <Button sx={{ backgroundColor: '#f9a825', color: 'white' }} onClick={() => handleOpenEdit(book)}>
+                                        Editar
+                                    </Button>
                                 </Box>
                             </Card>
                         </Grid>
                     ))}
                 </Grid>
-            </Container>
 
-            {/* Modal para adicionar um novo livro */}
-            <Dialog open={openNewBookModal} onClose={handleCloseNewBookModal}>
-                <DialogTitle>Cadastrar Novo Livro</DialogTitle>
-                <DialogContent>
-                    <TextField
-                        label="Título"
-                        fullWidth
-                        margin="normal"
-                        value={newBook.titulo}
-                        onChange={(e) => setNewBook({ ...newBook, titulo: e.target.value })}
-                    />
-                    <TextField
-                        label="Genero"
-                        fullWidth
-                        margin="normal"
-                        value={newBook.genero}
-                        onChange={(e) => setNewBook({ ...newBook, genero: e.target.value })}
-                    />
-                    <TextField
-                        label="Quantidade"
-                        fullWidth
-                        margin="normal"
-                        value={newBook.quantidade}
-                        onChange={(e) => setNewBook({ ...newBook, quantidade: e.target.value })}
-                    />
-                    {/* Campo de Preço com máscara */}
-                    <InputMask
-                        mask="R$ 999,99"
-                        value={newBook.preco}
-                        onChange={(e) => setNewBook({ ...newBook, preco: e.target.value })}
-                    >
-                        {(inputProps) => (
+                {/* Modal de Edição */}
+                {selectedBook && (
+                    <Dialog open={openEdit} onClose={handleCloseEdit}>
+                        <DialogTitle>Editar Livro</DialogTitle>
+                        <DialogContent>
                             <TextField
-                                {...inputProps}
-                                label="Preço"
+                                label="Título"
                                 fullWidth
                                 margin="normal"
+                                name="titulo"
+                                value={selectedBook.titulo || ''}
+                                onChange={(e) => setSelectedBook({ ...selectedBook, titulo: e.target.value })}
                             />
-                        )}
-                    </InputMask>
-                    <TextField
-                        label="Descrição"
-                        fullWidth
-                        margin="normal"
-                        value={newBook.descricao}
-                        onChange={(e) => setNewBook({ ...newBook, descricao: e.target.value })}
-                    />
-                    <TextField
-                        label="Url da Imagem"
-                        fullWidth
-                        margin="normal"
-                        value={newBook.url_imagem}
-                        onChange={(e) => setNewBook({ ...newBook, url_imagem: e.target.value })}
-                    />
-                </DialogContent>
-                <DialogActions>
-                    <Button onClick={handleCloseNewBookModal}>Cancelar</Button>
-                    <Button onClick={handleAddNewBook} sx={{ backgroundColor: '#2e8b74', color: 'white' }}>
-                        Adicionar Livro
-                    </Button>
-                </DialogActions>
-            </Dialog>
+                            <TextField
+                                label="Gênero"
+                                fullWidth
+                                margin="normal"
+                                name="genero"
+                                value={selectedBook.genero || ''}
+                                onChange={(e) => setSelectedBook({ ...selectedBook, genero: e.target.value })}
+                            />
+                            <TextField
+                                label="Quantidade"
+                                fullWidth
+                                margin="normal"
+                                name="quantidade"
+                                value={selectedBook.quantidade || ''}
+                                onChange={(e) => setSelectedBook({ ...selectedBook, quantidade: e.target.value })}
+                            />
+                            <InputMask
+                                mask="R$ 999,99"
+                                value={selectedBook.preco || ''}
+                                onChange={(e) => setSelectedBook({ ...selectedBook, preco: e.target.value })}
+                            >
+                                {(inputProps) => (
+                                    <TextField
+                                        {...inputProps}
+                                        label="Preço"
+                                        fullWidth
+                                        margin="normal"
+                                        name="preco"
+                                    />
+                                )}
+                            </InputMask>
+                            <TextField
+                                label="Descrição"
+                                fullWidth
+                                margin="normal"
+                                name="descricao"
+                                value={selectedBook.descricao || ''}
+                                onChange={(e) => setSelectedBook({ ...selectedBook, descricao: e.target.value })}
+                            />
+                            <TextField
+                                label="URL da Imagem"
+                                fullWidth
+                                margin="normal"
+                                name="url_imagem"
+                                value={selectedBook.url_imagem || ''}
+                                onChange={(e) => setSelectedBook({ ...selectedBook, url_imagem: e.target.value })}
+                            />
+                        </DialogContent>
+                        <DialogActions>
+                            <Button onClick={handleCloseEdit} color="primary">
+                                Cancelar
+                            </Button>
+                            <Button onClick={() => handleEditBook(selectedBook.id)} sx={{ backgroundColor: '#2e8b74', color: 'white' }}>
+                                Salvar
+                            </Button>
+                        </DialogActions>
+                    </Dialog>
+                )}
+            </Container>
         </div>
     );
 }

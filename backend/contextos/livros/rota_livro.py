@@ -106,7 +106,7 @@ def obter_livro(id: int, db: Session = Depends(pegar_conexao_db)):
 
 
 # Rota para atualizar um livro
-@roteador.put("/{id}")
+@roteador.put("/editar/{id}")
 def atualizar_livro(
     id: int,
     body: CadastrarLivro,
@@ -154,7 +154,7 @@ def atualizar_livro(
 
     # Atualiza os atributos do livro
     livro.titulo = body.titulo
-    livro.usuario_id = body.usuario_id
+    livro.usuario_id = usuario.id
     livro.genero = body.genero
     livro.quantidade = body.quantidade
     livro.preco = body.preco
