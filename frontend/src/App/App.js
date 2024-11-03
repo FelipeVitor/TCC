@@ -6,6 +6,8 @@ import { TextField, Button, IconButton, InputAdornment } from '@mui/material'; /
 import { Visibility, VisibilityOff } from '@mui/icons-material';
 import Cart from '../Cart/Cart'
 import MyBooks from '../MyBooks/MyBooks';
+import api from '../configs/api';
+import MySales from '../MySales/MySales';
 
 
 function App() {
@@ -21,23 +23,20 @@ function App() {
 
 
   const handleLogin = async () => {
+    debugger
     try {
-      const response = await fetch('http://0.0.0.0:9000/autenticacao/login', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
+      const response = await api.post('/autenticacao/login',
+        {
           email: email,
-          senha: password,
-        }),
-      });
+          senha: password
+        }
+      );
 
-      if (!response.ok) {
+      if (response.status !== 200) {
         throw new Error('Erro no login, por favor verifique suas credenciais');
       }
 
-      const data = await response.json();
+      const data = await response.data;
       const token = data.access_token;
 
       // Armazenar o token no localStorage e redirecionar para a página principal
@@ -109,6 +108,9 @@ function App() {
 
       {/* Rota para a tela dos livros do autor */}
       <Route path="/mybooks" element={<MyBooks />} />
+
+      {/* Rota para a tela de vendas do autor */}
+      <Route path="/mysales" element={<MySales />} />
     </Routes>
   );
 }

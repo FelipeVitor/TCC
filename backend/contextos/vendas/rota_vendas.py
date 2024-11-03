@@ -100,3 +100,19 @@ def finalizar_venda_direta(
         tx.commit()
 
     return Response(status_code=200)
+
+
+# Endpoint para listar todas as vendas
+@roteador.get("/listar")
+def listar_vendas(
+    db: Session = Depends(pegar_conexao_db),
+    info_do_login: str = Depends(JWTBearer()),
+):
+    usuario_email = info_do_login.get("sub")
+    usuario: Usuario = (
+        db.query(Usuario).filter(Usuario.email.ilike(usuario_email)).first()
+    )
+
+    vendas = db.query(Venda).filter(Venda.usuario_id == usuario.id).all()
+
+    return vendas

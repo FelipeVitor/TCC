@@ -1,8 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { AppBar, Toolbar, Typography, Button, Grid, Card, CardContent, Box, CardMedia, Container, Dialog, DialogTitle, DialogContent, DialogActions, TextField } from '@mui/material';
-import axios from 'axios';
 import InputMask from 'react-input-mask';
 import Swal from 'sweetalert2';
+import api from '../configs/api';
 
 function MyBooks() {
     const [currentPage, setCurrentPage] = useState(1);
@@ -21,7 +21,7 @@ function MyBooks() {
             if (!token) {
                 throw new Error("Token de autenticação não encontrado.");
             }
-            const response = await axios.get(`http://0.0.0.0:9000/livros/livros-do-autor?quantidade=${parseInt(booksPerPage)}&pagina=${parseInt(pagina)}&busca=${busca}`, {
+            const response = await api.get(`/livros/livros-do-autor?quantidade=${parseInt(booksPerPage)}&pagina=${parseInt(pagina)}&busca=${busca}`, {
                 headers: { Authorization: `Bearer ${token}` },
             });
             setBooks(response.data.data);
@@ -74,7 +74,7 @@ function MyBooks() {
         if (result.isConfirmed) {
             try {
                 const token = localStorage.getItem('token');
-                await axios.delete(`http://0.0.0.0:9000/livros/${bookId}`, {
+                await api.delete(`/livros/${bookId}`, {
                     headers: { Authorization: `Bearer ${token}` },
                 });
                 Swal.fire({
@@ -108,8 +108,8 @@ function MyBooks() {
                 preco: parseFloat(precoString.replace('R$ ', '').replace('.', '').replace(',', '.'))
             };
 
-            await axios.put(
-                `http://0.0.0.0:9000/livros/editar/${bookId}`,
+            await api.put(
+                `/livros/editar/${bookId}`,
                 updatedBook,
                 { headers: { Authorization: `Bearer ${token}` } }
             );
@@ -143,8 +143,8 @@ function MyBooks() {
                 preco: priceInFloat,
             };
 
-            await axios.post(
-                'http://0.0.0.0:9000/livros/cadastrar',
+            await api.post(
+                '/livros/cadastrar',
                 newBookWithUserId,
                 { headers: { Authorization: `Bearer ${token}` } }
             );

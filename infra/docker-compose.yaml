@@ -18,3 +18,5 @@ services:
     restart: unless-stopped
     stdin_open: true
     tty: true
+    environment:
+      - REACT_APP_API_URL=http://198.7.113.9:9000/

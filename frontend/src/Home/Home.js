@@ -6,6 +6,7 @@ import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import './Home.css';
 import Swal from 'sweetalert2';
+import api from '../configs/api';
 
 function Home() {
   const [currentPage, setCurrentPage] = useState(1);
@@ -32,7 +33,7 @@ function Home() {
 
   const fetchBooks = async (pagina, busca = '') => {
     try {
-      const response = await axios.get(`http://0.0.0.0:9000/livros/?quantidade=${booksPerPage}&pagina=${pagina}&busca=${busca}`);
+      const response = await api.get(`/livros/?quantidade=${booksPerPage}&pagina=${pagina}&busca=${busca}`);
       setBooks(response.data.data);
       setTotalPages(response.data.total_paginas);
     } catch (error) {
@@ -46,7 +47,7 @@ function Home() {
 
   const handleOpen = async (book) => {
     try {
-      const response = await axios.get(`http://0.0.0.0:9000/livros/obter-livros/${book.id}`);
+      const response = await api.get(`/livros/obter-livros/${book.id}`);
       setSelectedBook(response.data);  // Atualize o livro selecionado com os dados obtidos da API
       setOpen(true);
     } catch (error) {
@@ -82,8 +83,8 @@ function Home() {
     if (quantity > 0) {
       try {
         const token = localStorage.getItem('token');
-        await axios.post(
-          'http://0.0.0.0:9000/carrinho/adicionar',
+        await api.post(
+          '/carrinho/adicionar',
           { livro_id: book.id, quantidade: quantity },
           { headers: { Authorization: `Bearer ${token}` } }
         );
@@ -124,8 +125,8 @@ function Home() {
   const directPurchase = async (book) => {
     try {
       // Fazendo requisição POST para finalizar a venda direta
-      await axios.post(
-        `http://0.0.0.0:9000/venda/venda-direta/${book.id}`,
+      await api.post(
+        `/venda/venda-direta/${book.id}`,
         { quantidade: 1 },
         { headers: { Authorization: `Bearer ${localStorage.getItem('token')}` } }
       );

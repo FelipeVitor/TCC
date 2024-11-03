@@ -3,6 +3,7 @@ import { Typography, Toolbar, Grid, Card, CardContent, CardMedia, Box, Button, T
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import Swal from 'sweetalert2';
+import api from '../configs/api';
 
 function Cart() {
     const [cartItems, setCartItems] = useState([]);
@@ -12,7 +13,7 @@ function Cart() {
         // Carrega os itens do carrinho da API
         const fetchCartItems = async () => {
             try {
-                const response = await axios.get('http://0.0.0.0:9000/carrinho', {
+                const response = await api.get('/carrinho', {
                     headers: {
                         Authorization: `Bearer ${localStorage.getItem('token')}`,
                     },
@@ -41,8 +42,8 @@ function Cart() {
         try {
             if (newQuantity > item.carrinho.quantidade) {
                 newQuantity = newQuantity - item.carrinho.quantidade;
-                await axios.post(
-                    'http://0.0.0.0:9000/carrinho/adicionar',
+                await api.post(
+                    '/carrinho/adicionar',
                     {
                         livro_id: id,
                         quantidade: newQuantity,
@@ -75,7 +76,7 @@ function Cart() {
                     }
                 }
 
-                await axios.delete(`http://0.0.0.0:9000/carrinho/remover-item/${id}/${Math.abs(newQuantity)}`, {
+                await api.delete(`/carrinho/remover-item/${id}/${Math.abs(newQuantity)}`, {
                     headers: {
                         Authorization: `Bearer ${localStorage.getItem('token')}`,
                     },
@@ -116,8 +117,8 @@ function Cart() {
     const handleCheckout = async () => {
         try {
             // Fazendo requisição POST para finalizar a compra
-            await axios.post(
-                'http://0.0.0.0:9000/venda/comprar-do-carrinho/',
+            await api.post(
+                '/venda/comprar-do-carrinho/',
                 {},
                 {
                     headers: {
