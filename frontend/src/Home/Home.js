@@ -1,11 +1,8 @@
 import React, { useState, useEffect } from 'react';
-import { AppBar, Toolbar, Typography, Button, Grid, Card, CardContent, Box, CardMedia, Container, Pagination, Dialog, DialogTitle, DialogContent, DialogActions, TextField, Avatar, Menu, MenuItem, IconButton } from '@mui/material';
+import { AppBar, Toolbar, Typography, Button, Grid, Card, CardContent, Box, CardMedia, Container, Pagination, Dialog, DialogTitle, DialogContent, DialogActions, TextField, Avatar, Menu, MenuItem, IconButton, Snackbar, Alert } from '@mui/material';
 import ShoppingCartIcon from '@mui/icons-material/ShoppingCart';
 import AccountCircleIcon from '@mui/icons-material/AccountCircle'; // Ícone de perfil
-import { useNavigate } from 'react-router-dom';
-import axios from 'axios';
-import './Home.css';
-import Swal from 'sweetalert2';
+import { useNavigate, Link } from 'react-router-dom';
 import api from '../configs/api';
 
 function Home() {
@@ -18,6 +15,8 @@ function Home() {
   const [debouncedSearchTerm, setDebouncedSearchTerm] = useState('');
   const [quantities, setQuantities] = useState({});
   const [anchorEl, setAnchorEl] = useState(null); // Estado para controlar o submenu do perfil
+  const [snackbar, setSnackbar] = useState({ open: false, message: '', severity: 'success' }); // Estado do Snackbar
+
   const booksPerPage = 4;
   const navigate = useNavigate();
   const defaultImage = "https://img.freepik.com/fotos-premium/uma-pilha-de-livros-com-a-palavra-citacao-na-parte-superior_583952-80623.jpg?semt=ais_hybrid";
@@ -80,36 +79,26 @@ function Home() {
 
   const handleAddToCart = async (book) => {
     const quantity = quantities[book.id] || 1;
-    if (quantity > 0) {
-      try {
-        const token = localStorage.getItem('token');
-        await api.post(
-          '/carrinho/adicionar',
-          { livro_id: book.id, quantidade: quantity },
-          { headers: { Authorization: `Bearer ${token}` } }
-        );
-        Swal.fire({
-          title: 'Sucesso',
-          text: `${book.titulo} adicionado ao carrinho`,
-          icon: 'success',
-          confirmButtonText: 'OK'
-        });
-      } catch (error) {
-        console.error('Erro ao adicionar ao carrinho:', error);
-        Swal.fire({
-          title: 'Erro',
-          text: error.message || error,
-          icon: 'error',
-          confirmButtonText: 'OK'
-        });
+    try {
+      const token = localStorage.getItem('token');
+      await api.post(
+        '/carrinho/adicionar',
+        { livro_id: book.id, quantidade: quantity },
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+
+      if (quantity <= 0) {
+        throw new Error('Quantidade mínima é 1');
       }
-    } else {
-      Swal.fire({
-        title: 'Atenção',
-        text: `A quantidade de ${book.titulo} deve ser maior que zero.`,
-        icon: 'warning',
-        confirmButtonText: 'OK'
-      });
+
+      // Exibir Snackbar de sucesso
+      setSnackbar({ open: true, message: `${book.titulo} adicionado ao carrinho`, severity: 'success' });
+    } catch (error) {
+      console.error('Erro ao adicionar ao carrinho:', error);
+
+      const mensagem_erro = error.response.data
+
+      setSnackbar({ open: true, message: mensagem_erro.detail, severity: 'error' });
     }
   };
 
@@ -130,37 +119,35 @@ function Home() {
         { quantidade: 1 },
         { headers: { Authorization: `Bearer ${localStorage.getItem('token')}` } }
       );
-      Swal.fire({
-        title: 'Sucesso',
-        text: 'Compra realizada com sucesso',
-        icon: 'success',
-        confirmButtonText: 'OK'
-      });
+      // Exibir Snackbar de sucesso
+      setSnackbar({ open: true, message: 'Compra realizada com sucesso', severity: 'success' });
     } catch (error) {
-      if (error.response && error.response.data) {
-        Swal.fire({
-          title: 'Erro',
-          text: `Erro: ${error.response.data.detail}`,
-          icon: 'error',
-          confirmButtonText: 'OK'
-        });
-      } else {
-        Swal.fire({
-          title: 'Erro',
-          text: 'Erro ao realizar a compra. Tente novamente.',
-          icon: 'error',
-          confirmButtonText: 'OK'
-        });
-      }
+      const errorMessage = error.response?.data?.detail || 'Erro ao realizar a compra. Tente novamente.';
+      // Exibir Snackbar de erro
+      setSnackbar({ open: true, message: `Erro: ${errorMessage}`, severity: 'error' });
     }
   };
 
+  const handleSnackbarClose = () => {
+    setSnackbar({ ...snackbar, open: false });
+  };
+
+  const handleLogout = () => {
+    localStorage.removeItem('token');
+    navigate('/');
+  }
+
+  const isLoggedIn = Boolean(localStorage.getItem('token'));
+
   return (
+
     <div>
       <AppBar sx={{ backgroundColor: '#2e8b74', color: 'white', fontWeight: 'bold' }} position="static">
         <Toolbar>
           <Typography variant="h6" style={{ flexGrow: 1 }}>
-            Livraria Virtual
+            <Link to="/home" style={{ textDecoration: 'none', color: 'inherit' }}>
+              Livraria Virtual
+            </Link>
           </Typography>
           <TextField
             variant="outlined"
@@ -189,10 +176,27 @@ function Home() {
               horizontal: 'right',
             }}
           >
-            <MenuItem onClick={() => { handleMenuClose(); navigate('/profile'); }}>Perfil</MenuItem>
-            <MenuItem onClick={() => { handleMenuClose(); navigate('/mybooks'); }}>Meus Livros</MenuItem>
-            <MenuItem onClick={() => { handleMenuClose(); navigate('/mysales'); }}>Minhas Vendas</MenuItem>
-            <MenuItem onClick={() => { handleMenuClose(); navigate('/logout'); }}>Logout</MenuItem>
+
+            {/* Visível apenas se o usuário estiver logado */}
+            {isLoggedIn && (
+              <>
+                <MenuItem onClick={() => { handleMenuClose(); navigate('/mybooks'); }}>Meus Livros</MenuItem>
+                <MenuItem onClick={() => { handleMenuClose(); navigate('/mypurchases'); }}>Minhas Compras</MenuItem>
+                <MenuItem onClick={() => { handleMenuClose(); navigate('/mysales'); }}>Minhas Vendas</MenuItem>
+                <MenuItem onClick={() => { handleMenuClose(); handleLogout() }}>Logout</MenuItem>
+              </>
+            )}
+
+            {/* Visível apenas se o usuário não estiver logado */}
+            {!isLoggedIn && (
+              <>
+                <MenuItem onClick={() => { handleMenuClose(); navigate('/'); }}>Login</MenuItem>
+              </>
+            )}
+
+            {/* Sempre Visível */}
+            <MenuItem onClick={() => { handleMenuClose(); navigate('/callcenter'); }}>Fale Conosco</MenuItem>
+
           </Menu>
         </Toolbar>
       </AppBar>
@@ -258,25 +262,39 @@ function Home() {
       </Container>
 
       {/* Diálogo com informações do livro */}
-      {selectedBook && (
-        <Dialog open={open} onClose={handleClose} maxWidth="md" fullWidth>
-          <DialogTitle>{selectedBook.titulo}</DialogTitle>
-          <DialogContent>
-            {/* Informações do livro */}
-            <Typography variant="h6">Autor: {selectedBook.autor}</Typography>
-            <Typography variant="body1">{selectedBook.descricao}</Typography>
-            <Typography variant="h6" color="primary">
-              R$ {parseFloat(selectedBook.preco).toFixed(2)}
-            </Typography>
-          </DialogContent>
-          <DialogActions>
-            <Button onClick={handleClose} color="primary">
-              Fechar
-            </Button>
-          </DialogActions>
-        </Dialog>
-      )}
-    </div>
+      {
+        selectedBook && (
+          <Dialog open={open} onClose={handleClose} maxWidth="md" fullWidth>
+            <DialogTitle>{selectedBook.titulo}</DialogTitle>
+            <DialogContent>
+              {/* Informações do livro */}
+              <Typography variant="h6">Autor: {selectedBook.autor}</Typography>
+              <Typography variant="body1">{selectedBook.descricao}</Typography>
+              <Typography variant="h6" color="primary">
+                R$ {parseFloat(selectedBook.preco).toFixed(2)}
+              </Typography>
+            </DialogContent>
+            <DialogActions>
+              <Button onClick={handleClose} color="primary">
+                Fechar
+              </Button>
+            </DialogActions>
+          </Dialog>
+        )
+      }
+
+      {/* Snackbar para mostrar mensagens */}
+      <Snackbar
+        open={snackbar.open}
+        autoHideDuration={6000}
+        onClose={handleSnackbarClose}
+        anchorOrigin={{ vertical: 'top', horizontal: 'right' }}
+      >
+        <Alert onClose={handleSnackbarClose} severity={snackbar.severity} sx={{ width: '100%' }}>
+          {snackbar.message}
+        </Alert>
+      </Snackbar>
+    </div >
   );
 }
 

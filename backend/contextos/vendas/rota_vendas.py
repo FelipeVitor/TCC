@@ -102,7 +102,6 @@ def finalizar_venda_direta(
     return Response(status_code=200)
 
 
-# Endpoint para listar todas as vendas
 @roteador.get("/listar")
 def listar_vendas(
     db: Session = Depends(pegar_conexao_db),
@@ -113,6 +112,27 @@ def listar_vendas(
         db.query(Usuario).filter(Usuario.email.ilike(usuario_email)).first()
     )
 
+    # Busca todas as vendas do usuário
     vendas = db.query(Venda).filter(Venda.usuario_id == usuario.id).all()
 
-    return vendas
+    # Cria uma lista para armazenar as vendas com o total calculado
+    vendas_com_total = []
+
+    for venda in vendas:
+        # Calcula o total da venda
+        total_venda = sum(item.preco_unitario * item.quantidade for item in venda.itens)
+
+        # Adiciona o total calculado ao dicionário de venda
+        venda_data = {
+            "id": venda.id,
+            "data_venda": venda.data_venda,
+            "livros": [
+                {"titulo": item.livro.titulo, "quantidade": item.quantidade}
+                for item in venda.itens
+            ],
+            "total": total_venda,
+        }
+
+        vendas_com_total.append(venda_data)
+
+    return vendas_com_total

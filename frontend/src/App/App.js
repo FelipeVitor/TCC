@@ -8,6 +8,7 @@ import Cart from '../Cart/Cart'
 import MyBooks from '../MyBooks/MyBooks';
 import api from '../configs/api';
 import MySales from '../MySales/MySales';
+import Callcenter from '../Callcenter/Callcenter';
 
 
 function App() {
@@ -23,7 +24,6 @@ function App() {
 
 
   const handleLogin = async () => {
-    debugger
     try {
       const response = await api.post('/autenticacao/login',
         {
@@ -106,11 +106,16 @@ function App() {
       {/* Rota para a tela do carrinho */}
       <Route path="/cart" element={<Cart />} />
 
+      {/* Rota para a tela das compras do cliente */}
+
       {/* Rota para a tela dos livros do autor */}
       <Route path="/mybooks" element={<MyBooks />} />
 
       {/* Rota para a tela de vendas do autor */}
       <Route path="/mysales" element={<MySales />} />
+
+      {/* Rota para a tela do callcenter */}
+      <Route path="/callcenter" element={<Callcenter />} />
     </Routes>
   );
 }

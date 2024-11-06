@@ -1,7 +1,9 @@
 import React, { useState, useEffect } from 'react';
-import { AppBar, Toolbar, Typography, Button, Grid, Card, CardContent, Box, CardMedia, Container, Dialog, DialogTitle, DialogContent, DialogActions, TextField } from '@mui/material';
+import { AppBar, Toolbar, Typography, Button, Grid, Card, CardContent, Box, CardMedia, Container, Dialog, DialogTitle, DialogContent, DialogActions, TextField, IconButton, Menu, MenuItem, Avatar, Snackbar, Alert } from '@mui/material';
+import AccountCircleIcon from '@mui/icons-material/AccountCircle';
+import ShoppingCartIcon from '@mui/icons-material/ShoppingCart';
+import { useNavigate, Link } from 'react-router-dom';
 import InputMask from 'react-input-mask';
-import Swal from 'sweetalert2';
 import api from '../configs/api';
 
 function MyBooks() {
@@ -13,7 +15,11 @@ function MyBooks() {
     const [selectedBook, setSelectedBook] = useState(null);
     const [newBook, setNewBook] = useState({ titulo: '', autor: '', preco: '', url_imagem: '' });
     const [openNewBookModal, setOpenNewBookModal] = useState(false);
+    const [snackbarMessage, setSnackbarMessage] = useState('');
+    const [snackbarOpen, setSnackbarOpen] = useState(false);
+    const [snackbarSeverity, setSnackbarSeverity] = useState('success');
     const booksPerPage = 4;
+    const navigate = useNavigate();
 
     const fetchBooks = async (pagina, busca = '') => {
         try {
@@ -61,37 +67,29 @@ function MyBooks() {
         setOpenNewBookModal(false);
     };
 
-    const handleDeleteBook = async (bookId) => {
-        const result = await Swal.fire({
-            title: 'Tem certeza que deseja excluir este livro?',
-            text: "Essa ação não pode ser desfeita",
-            icon: 'warning',
-            showCancelButton: true,
-            confirmButtonText: 'Sim',
-            cancelButtonText: 'Cancelar'
-        });
+    const handleSnackbarClose = () => {
+        setSnackbarOpen(false);
+    };
 
-        if (result.isConfirmed) {
+    const showSnackbar = (message, severity) => {
+        setSnackbarMessage(message);
+        setSnackbarSeverity(severity);
+        setSnackbarOpen(true);
+    };
+
+    const handleDeleteBook = async (bookId) => {
+        const confirmed = window.confirm('Tem certeza que deseja excluir este livro? Essa ação não pode ser desfeita.');
+        if (confirmed) {
             try {
                 const token = localStorage.getItem('token');
                 await api.delete(`/livros/${bookId}`, {
                     headers: { Authorization: `Bearer ${token}` },
                 });
-                Swal.fire({
-                    title: 'Sucesso',
-                    text: 'Livro excluído com sucesso!',
-                    icon: 'success',
-                    confirmButtonText: 'OK'
-                });
+                showSnackbar('Livro excluído com sucesso!', 'success');
                 fetchBooks(currentPage);
             } catch (error) {
                 console.error('Erro ao excluir o livro:', error);
-                Swal.fire({
-                    title: 'Erro',
-                    text: 'Erro ao excluir o livro.',
-                    icon: 'error',
-                    confirmButtonText: 'OK'
-                });
+                showSnackbar('Erro ao excluir o livro.', 'error');
             }
         }
     };
@@ -114,22 +112,12 @@ function MyBooks() {
                 { headers: { Authorization: `Bearer ${token}` } }
             );
 
-            Swal.fire({
-                title: 'Sucesso',
-                text: 'Livro atualizado com sucesso!',
-                icon: 'success',
-                confirmButtonText: 'OK'
-            });
+            showSnackbar('Livro atualizado com sucesso!', 'success');
             handleCloseEdit();
             fetchBooks(currentPage);
         } catch (error) {
             console.error('Erro ao editar o livro:', error);
-            Swal.fire({
-                title: 'Erro',
-                text: 'Erro ao editar o livro.',
-                icon: 'error',
-                confirmButtonText: 'OK'
-            });
+            showSnackbar('Erro ao editar o livro.', 'error');
         }
     };
 
@@ -148,36 +136,89 @@ function MyBooks() {
                 newBookWithUserId,
                 { headers: { Authorization: `Bearer ${token}` } }
             );
-            Swal.fire({
-                title: 'Sucesso',
-                text: 'Livro cadastrado com sucesso!',
-                icon: 'success',
-                confirmButtonText: 'OK'
-            });
+            showSnackbar('Livro cadastrado com sucesso!', 'success');
             setNewBook({ titulo: '', genero: '', quantidade: '', preco: '', descricao: '', url_imagem: '' });
             handleCloseNewBookModal();
             fetchBooks(currentPage);
         } catch (error) {
             console.error('Erro ao cadastrar o livro:', error);
-            Swal.fire({
-                title: 'Erro',
-                text: 'Erro ao cadastrar o livro.',
-                icon: 'error',
-                confirmButtonText: 'OK'
-            });
+            showSnackbar('Erro ao cadastrar o livro.', 'error');
         }
     };
+
+    const [anchorEl, setAnchorEl] = useState(null);
+    const handleCartClick = () => {
+        navigate('/cart');
+    };
+    const handleMenuOpen = (event) => {
+        setAnchorEl(event.currentTarget);
+    };
+    const handleMenuClose = () => {
+        setAnchorEl(null);
+    };
+    const handleLogout = () => {
+        localStorage.removeItem('token');
+        navigate('/');
+    };
+    const isLoggedIn = Boolean(localStorage.getItem('token'));
+
+    const defaultImage = "https://img.freepik.com/fotos-premium/uma-pilha-de-livros-com-a-palavra-citacao-na-parte-superior_583952-80623.jpg?semt=ais_hybrid";
 
     return (
         <div>
             <AppBar position="static" sx={{ backgroundColor: '#2e8b74', color: 'white', fontWeight: 'bold' }}>
                 <Toolbar>
                     <Typography variant="h6" style={{ flexGrow: 1 }}>
-                        Meus Livros
+                        <Link to="/home" style={{ textDecoration: 'none', color: 'inherit' }}>
+                            Livraria Virtual
+                        </Link>
                     </Typography>
                     <Button sx={{ color: 'white', fontWeight: 'bold' }} onClick={handleOpenNewBookModal}>
                         Cadastrar Novo Livro
                     </Button>
+
+                    <Button color="inherit" startIcon={<ShoppingCartIcon />} onClick={handleCartClick}>
+                    </Button>
+                    <IconButton color="inherit" onClick={handleMenuOpen}>
+                        <Avatar>
+                            <AccountCircleIcon />
+                        </Avatar>
+                    </IconButton>
+                    <Menu
+                        anchorEl={anchorEl}
+                        open={Boolean(anchorEl)}
+                        onClose={handleMenuClose}
+                        anchorOrigin={{
+                            vertical: 'bottom',
+                            horizontal: 'right',
+                        }}
+                        transformOrigin={{
+                            vertical: 'top',
+                            horizontal: 'right',
+                        }}
+                    >
+
+                        {/* Visível apenas se o usuário estiver logado */}
+                        {isLoggedIn && (
+                            <>
+                                <MenuItem onClick={() => { handleMenuClose(); navigate('/mybooks'); }}>Meus Livros</MenuItem>
+                                <MenuItem onClick={() => { handleMenuClose(); navigate('/mypurchases'); }}>Minhas Compras</MenuItem>
+                                <MenuItem onClick={() => { handleMenuClose(); navigate('/mysales'); }}>Minhas Vendas</MenuItem>
+                                <MenuItem onClick={() => { handleMenuClose(); handleLogout() }}>Logout</MenuItem>
+                            </>
+                        )}
+
+                        {/* Visível apenas se o usuário não estiver logado */}
+                        {!isLoggedIn && (
+                            <>
+                                <MenuItem onClick={() => { handleMenuClose(); navigate('/'); }}>Login</MenuItem>
+                            </>
+                        )}
+
+                        {/* Sempre Visível */}
+                        <MenuItem onClick={() => { handleMenuClose(); navigate('/callcenter'); }}>Fale Conosco</MenuItem>
+
+                    </Menu>
                 </Toolbar>
             </AppBar>
 
@@ -193,18 +234,20 @@ function MyBooks() {
                                 <Box sx={{ position: 'relative', paddingTop: '125%' }}>
                                     <CardMedia
                                         component="img"
-                                        image={book.url_imagem}
+                                        image={book.url_imagem === '' ? defaultImage : book.url_imagem}
                                         alt={book.titulo}
                                         sx={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', objectFit: 'cover' }}
                                     />
                                 </Box>
-                                <CardContent sx={{ flexGrow: 1 }}>
-                                    <Typography variant="h6">{book.titulo}</Typography>
-                                    <Typography variant="subtitle1" color="textSecondary">
+                                <CardContent>
+                                    <Typography variant="h6" component="div">
+                                        {book.titulo}
+                                    </Typography>
+                                    <Typography variant="body2" color="text.secondary">
                                         {book.autor}
                                     </Typography>
-                                    <Typography variant="h6" color="primary">
-                                        R$ {parseFloat(book.preco).toFixed(2).replace('.', ',')}
+                                    <Typography variant="body2" color="text.secondary">
+                                        R$ {book.preco.toFixed(2)}
                                     </Typography>
                                 </CardContent>
                                 <Box sx={{ display: 'flex', justifyContent: 'center', gap: 1, paddingBottom: 2 }}>
@@ -222,6 +265,87 @@ function MyBooks() {
                         </Grid>
                     ))}
                 </Grid>
+
+                {/* Modal para adicionar um novo livro */}
+                <Dialog open={openNewBookModal} onClose={handleCloseNewBookModal}>
+                    <DialogTitle>Cadastrar Novo Livro</DialogTitle>
+                    <DialogContent>
+                        <TextField
+                            label="Título"
+                            fullWidth
+                            margin="normal"
+                            value={newBook.titulo}
+                            onChange={(e) => setNewBook({ ...newBook, titulo: e.target.value })}
+                        />
+                        <TextField
+                            label="Genero"
+                            fullWidth
+                            margin="normal"
+                            value={newBook.genero}
+                            onChange={(e) => setNewBook({ ...newBook, genero: e.target.value })}
+                        />
+                        <TextField
+                            label="Quantidade"
+                            fullWidth
+                            margin="normal"
+                            value={newBook.quantidade}
+                            onChange={(e) => setNewBook({ ...newBook, quantidade: e.target.value })}
+                        />
+                        <InputMask
+                            mask="R$ 999,99"
+                            value={newBook.preco || ''}
+                            onChange={(e) => setNewBook({ ...newBook, preco: e.target.value })}
+                        >
+                            {(inputProps) => (
+                                <TextField
+                                    {...inputProps}
+                                    label="Preço"
+                                    fullWidth
+                                    margin="normal"
+                                    name="preco"
+                                />
+                            )}
+                        </InputMask>
+                        <TextField
+                            label="Descrição"
+                            fullWidth
+                            margin="normal"
+                            value={newBook.descricao}
+                            onChange={(e) => setNewBook({ ...newBook, descricao: e.target.value })}
+                        />
+                        <TextField
+                            label="Url da Imagem"
+                            fullWidth
+                            margin="normal"
+                            value={newBook.url_imagem}
+                            onChange={(e) => setNewBook({ ...newBook, url_imagem: e.target.value })}
+                        />
+                    </DialogContent>
+                    <DialogActions>
+                        <Button onClick={handleCloseNewBookModal} color="primary">
+                            Cancelar
+                        </Button>
+                        <Button onClick={handleAddNewBook} color="primary">
+                            Cadastrar
+                        </Button>
+                    </DialogActions>
+                </Dialog>
+                {/* Pop-up de detalhes */}
+                {selectedBook && (
+                    <Dialog open={open} onClose={handleClose}>
+                        <DialogTitle>{selectedBook.titulo}</DialogTitle>
+                        <DialogContent>
+                            <Typography variant="h6">{selectedBook.autor}</Typography>
+                            <Typography variant="body1">{selectedBook.descricao}</Typography>
+                            {selectedBook.url_imagem && (
+                                <Box component="img" src={selectedBook.url_imagem} alt={selectedBook.titulo} sx={{ maxWidth: '100%', height: 'auto' }} />
+                            )}
+                        </DialogContent>
+                        <DialogActions>
+                            <Button onClick={handleClose}>Fechar</Button>
+                        </DialogActions>
+                    </Dialog>
+                )}
 
                 {/* Modal de Edição */}
                 {selectedBook && (
@@ -295,6 +419,13 @@ function MyBooks() {
                     </Dialog>
                 )}
             </Container>
+
+            {/* Snackbar para feedback visual */}
+            <Snackbar open={snackbarOpen} autoHideDuration={6000} onClose={handleSnackbarClose} anchorOrigin={{ vertical: 'top', horizontal: 'right' }}>
+                <Alert onClose={handleSnackbarClose} severity={snackbarSeverity} sx={{ width: '100%' }}>
+                    {snackbarMessage}
+                </Alert>
+            </Snackbar>
         </div>
     );
 }
