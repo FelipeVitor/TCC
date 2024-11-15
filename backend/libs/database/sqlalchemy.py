@@ -93,7 +93,7 @@ def popular_tabela():
         db = Sessao()
         livros = db.query(Livro).limit(5).all()
 
-        venda = Venda.criar(usuario_id=2)
+        venda = Venda.criar(id_usuario_comprador=2)
 
         for livro in livros:
             item = VendaItem.criar(

@@ -21,16 +21,15 @@ class Venda(_Base):
 
     id = Column(BaseUUID(), primary_key=True, default=uuid.uuid4, nullable=False)
     data_venda = Column(DateTime, default=datetime.utcnow, nullable=False)
-    usuario_id = Column(Integer, ForeignKey("usuarios.id"), nullable=False)
+    id_usuario_comprador = Column(Integer, ForeignKey("usuarios.id"), nullable=False)
 
     itens = relationship("VendaItem", back_populates="venda")
-    compra = relationship("Compra", uselist=False, back_populates="venda")
 
     @classmethod
-    def criar(cls, usuario_id):
+    def criar(cls, id_usuario_comprador):
         venda = cls(
             id=uuid.uuid4(),
-            usuario_id=usuario_id,
+            id_usuario_comprador=id_usuario_comprador,
         )
 
         return venda
@@ -41,6 +40,9 @@ class Venda(_Base):
     @property
     def total_da_venda(self):
         return sum([item.preco_unitario * item.quantidade for item in self.itens])
+
+    def __repr__(self):
+        return f"<Venda {self.id} - {self.id_usuario_comprador} - {self.data_venda}>"
 
 
 class VendaItem(_Base):
@@ -63,3 +65,10 @@ class VendaItem(_Base):
             quantidade=quantidade,
             preco_unitario=preco_unitario,
         )
+
+    def __repr__(self):
+        return f"<VendaItem {self.id} - {self.venda_id} - {self.livro_id} - {self.quantidade} - {self.preco_unitario}>"
+
+    @property
+    def total(self):
+        return self.quantidade * self.preco_unitario

@@ -1,14 +1,40 @@
+from collections import defaultdict
+from datetime import datetime
+from uuid import UUID
 from fastapi import APIRouter, Depends, HTTPException, Response
+from pydantic import BaseModel
 from sqlalchemy.orm import Session
 
 from contextos.livros.entidade_livro import Livro
 from contextos.usuarios.entidade_usuario import Usuario
-from contextos.compras.entidade_compras import Compra
 from contextos.vendas.entidade_vendas import Venda, VendaItem
 from libs.autenticacao.config import JWTBearer
 from libs.database.sqlalchemy import pegar_conexao_db
 
 roteador = APIRouter(prefix="/venda", tags=["Venda"])
+
+
+class VendaItemRetorno(BaseModel):
+    id: UUID
+    valor_total_da_venda: float
+    data_venda: datetime
+    nome_do_livro: str
+    quantidade: int
+
+
+class VendaRetorno(BaseModel):
+    venda: list[VendaItemRetorno]
+
+
+class CompraRetorno(BaseModel):
+    id: UUID
+    total: float
+    data_venda: datetime
+
+
+class ComprasEVendasRetorno(BaseModel):
+    compras: list[CompraRetorno]
+    vendas: list[VendaRetorno]
 
 
 # Endpoint para adicionar um item ao carrinho
@@ -27,7 +53,7 @@ def finalizar_compra_pelo_carrinho(
     carrinho_items = buscar_carriho_do_usuario_repo(db=db, usuario_id=usuario.id)
 
     with db as tx:
-        venda = Venda.criar(usuario_id=usuario.id)
+        venda = Venda.criar(id_usuario_comprador=usuario.id)
 
         for carrinho, livro in carrinho_items:
             venda_item = VendaItem.criar(
@@ -51,10 +77,6 @@ def finalizar_compra_pelo_carrinho(
 
         tx.add(venda)
 
-        # Criar a compra relacionada à venda
-        compra = Compra.criar(venda_id=venda.id)
-        tx.add(compra)
-
         tx.commit()
 
     return Response(status_code=200)
@@ -75,7 +97,7 @@ def finalizar_venda_direta(
     livro = db.query(Livro).filter(Livro.id == livro_id).first()
 
     with db as tx:
-        venda = Venda.criar(usuario_id=usuario.id)
+        venda = Venda.criar(id_usuario_comprador=usuario.id)
 
         venda_item = VendaItem.criar(
             venda_id=venda.id,
@@ -105,33 +127,53 @@ def finalizar_venda_direta(
 def listar_vendas(
     db: Session = Depends(pegar_conexao_db),
     info_do_login: str = Depends(JWTBearer()),
-):
+) -> ComprasEVendasRetorno:
     usuario_email = info_do_login.get("sub")
     usuario: Usuario = (
         db.query(Usuario).filter(Usuario.email.ilike(usuario_email)).first()
     )
 
-    # Busca todas as vendas do usuário
-    vendas = db.query(Venda).filter(Venda.usuario_id == usuario.id).all()
+    vendas_do_autor = (
+        db.query(VendaItem)
+        .join(Livro, VendaItem.livro_id == Livro.id)
+        .filter(
+            Livro.usuario_id == usuario.id,
+        )
+        .all()
+    )
 
-    # Cria uma lista para armazenar as vendas com o total calculado
-    vendas_com_total = []
+    compras_do_usuario = (
+        db.query(Venda).filter(Venda.id_usuario_comprador == usuario.id).all()
+    )
 
-    for venda in vendas:
-        # Calcula o total da venda
-        total_venda = sum(item.preco_unitario * item.quantidade for item in venda.itens)
+    itens_retorno_vendas = defaultdict(list)
+    itens_retorno_compras: list[CompraRetorno] = []
 
-        # Adiciona o total calculado ao dicionário de venda
-        venda_data = {
-            "id": venda.id,
-            "data_venda": venda.data_venda,
-            "livros": [
-                {"titulo": item.livro.titulo, "quantidade": item.quantidade}
-                for item in venda.itens
-            ],
-            "total": total_venda,
-        }
+    for item in vendas_do_autor:
+        itens_retorno_vendas[item.venda.id].append(
+            VendaItemRetorno(
+                id=item.venda.id,
+                nome_do_livro=item.livro.titulo,
+                data_venda=item.venda.data_venda,
+                valor_total_da_venda=item.venda.total_da_venda,
+                quantidade=item.quantidade,
+            )
+        )
 
-        vendas_com_total.append(venda_data)
+    venda_retorno = []
+    for venda_id, itens in itens_retorno_vendas.items():
+        venda_retorno.append(VendaRetorno(venda=itens))
 
-    return vendas_com_total
+    for item in compras_do_usuario:
+        itens_retorno_compras.append(
+            CompraRetorno(
+                id=item.id,
+                total=item.total_da_venda,
+                data_venda=item.data_venda,
+            )
+        )
+
+    return ComprasEVendasRetorno(
+        compras=itens_retorno_compras,
+        vendas=venda_retorno,
+    )

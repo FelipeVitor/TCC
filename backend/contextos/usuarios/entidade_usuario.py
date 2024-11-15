@@ -3,7 +3,7 @@ from libs.database.sqlalchemy import _Base
 
 
 class Usuario(_Base):
-    __tablename__ = 'usuarios'
+    __tablename__ = "usuarios"
 
     id = Column(Integer, primary_key=True, autoincrement=True)
     nome = Column(String(100), nullable=False)
@@ -24,7 +24,8 @@ class Usuario(_Base):
             email=email,
             ativo=True,
             deletado=False,
-            senha=senha
+            senha=senha,
         )
 
-
+    def __repr__(self):
+        return f"<Usuario {self.id} - {self.nome} {self.sobrenome} - {self.ativo} - {self.deletado} >"

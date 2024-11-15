@@ -22,6 +22,9 @@ class Carrinho(_Base):
     def atualizar_total(self, preco_livro):
         total = preco_livro * self.quantidade
 
+    def __repr__(self):
+        return f"<Carrinho {self.id} - {self.usuario_id} - {self.livro_id} - {self.quantidade} >"
+
     # Todo:
     # - coluna livro id unico (unique)
     # - remover coluna e codigo referente ao total

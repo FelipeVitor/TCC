@@ -37,3 +37,6 @@ class Livro(_Base):
             url_imagem=url_imagem,
             deletado=False,
         )
+
+    def __repr__(self):
+        return f"<Livro {self.id} - {self.usuario_id} - {self.titulo} - {self.quantidade} - {self.preco} >"
