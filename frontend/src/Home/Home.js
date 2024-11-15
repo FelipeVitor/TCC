@@ -211,7 +211,7 @@ function Home() {
                 <Box sx={{ position: 'relative', paddingTop: '125%' }}>
                   <CardMedia
                     component="img"
-                    image={book.url_imagem === "" ? book.url_imagem : defaultImage} // Usando a URL da imagem da API
+                    image={book.url_imagem === "" ? defaultImage : book.url_imagem} // Usando a URL da imagem da API
                     alt={book.titulo}
                     sx={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', objectFit: 'cover' }}
                   />

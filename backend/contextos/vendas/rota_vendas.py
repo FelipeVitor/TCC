@@ -3,6 +3,7 @@ from sqlalchemy.orm import Session
 
 from contextos.livros.entidade_livro import Livro
 from contextos.usuarios.entidade_usuario import Usuario
+from contextos.compras.entidade_compras import Compra
 from contextos.vendas.entidade_vendas import Venda, VendaItem
 from libs.autenticacao.config import JWTBearer
 from libs.database.sqlalchemy import pegar_conexao_db
@@ -44,17 +45,15 @@ def finalizar_compra_pelo_carrinho(
                     detail=f"Quantidade insuficiente do livro {livro.titulo}, restam apenas {livro.quantidade} unidades, você tentou comprar {carrinho.quantidade}, por favor, atualize a quantidade do livro no carrinho.",
                 )
 
-            if livro.id != carrinho.livro_id:
-                raise HTTPException(
-                    status_code=400,
-                    detail=f"O livro {livro.titulo} não corresponde ao livro no carrinho.",
-                )
-
             livro.quantidade -= carrinho.quantidade
 
             tx.delete(carrinho)
 
         tx.add(venda)
+
+        # Criar a compra relacionada à venda
+        compra = Compra.criar(venda_id=venda.id)
+        tx.add(compra)
 
         tx.commit()
 
