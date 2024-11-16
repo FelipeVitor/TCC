@@ -1,14 +1,18 @@
 from typing import Optional
 
-from fastapi import APIRouter, Depends, HTTPException, Query, Response
-from pydantic import BaseModel
-from sqlalchemy import or_
+from fastapi import APIRouter, Depends, Query, Response
 from sqlalchemy.orm import Session
 
 from contextos.livros.entidade_livro import (
     Livro,
 )  # Certifique-se de que a entidade Livro esteja importada
-from contextos.livros.modelos_livro import CadastrarLivro
+from contextos.livros.modelos_livro import (
+    CadastrarLivro,
+    LivroRetorno,
+    RetonoPaginaLivros,
+)
+from contextos.livros.repositorio_livro import LivroRepository
+from contextos.livros.services_livro import LivroService
 from contextos.usuarios.entidade_usuario import Usuario
 from libs.autenticacao.config import JWTBearer
 from libs.database.sqlalchemy import pegar_conexao_db
@@ -23,72 +27,36 @@ def cadastrar_livro(
     db: Session = Depends(pegar_conexao_db),
     usuario_do_login: Usuario = Depends(JWTBearer()),
 ):
-    livro = Livro(
-        titulo=body.titulo,
-        usuario_id=usuario_do_login.id,
-        genero=body.genero,
-        quantidade=body.quantidade,
-        preco=body.preco,
-        descricao=body.descricao,
-        url_imagem=body.url_imagem,
-    )
+    repo_livro = LivroRepository(db=db)
+    servico_livro = LivroService(repo_livro)
 
-    db.add(livro)
-    db.commit()
+    livro = servico_livro.cadastrar_livro(dados_do_livro=body, usuario=usuario_do_login)
 
     return livro
 
 
-# Rota para listar todos os livros com paginação, iniciando da página 1
 @roteador.get("/")
 def listar_livros(
     quantidade: int = Query(10, ge=1),
     pagina: int = Query(1, ge=1),
     busca: Optional[str] = Query(None),  # Parâmetro de busca opcional
     db: Session = Depends(pegar_conexao_db),
-):
-    # Calcula o offset com base na página e no tamanho da página (ajustando para que a primeira página seja 1)
-    offset = (pagina - 1) * quantidade
+) -> RetonoPaginaLivros:
+    repo_livro = LivroRepository(db=db)
+    servico_livro = LivroService(repo_livro)
 
-    # Consulta livros com paginação e faz o join com a tabela Usuario para buscar pelo nome do autor
-    consulta = db.query(Livro).join(Usuario, Livro.usuario_id == Usuario.id)
-
-    # Se o parâmetro de busca for fornecido, filtra os livros pelo título ou pelo nome do autor
-    if busca:
-        busca_formatada = f"%{busca}%"
-        consulta = consulta.filter(
-            or_(
-                Livro.titulo.ilike(busca_formatada),  # Busca pelo título do livro
-                Usuario.nome.ilike(busca_formatada),  # Busca pelo nome do autor
-            )
-        )
-
-    # Executa a consulta com limite e offset
-    livros = consulta.offset(offset).limit(quantidade).all()
-
-    # Conta o total de livros filtrados (sem limite e offset)
-    total = consulta.count()
-
-    # Calcula o número total de páginas
-    total_paginas = (total + quantidade - 1) // quantidade
-
-    # Retorna os livros e a paginação
-    return {
-        "total": total,
-        "tamanho_pagina": quantidade,
-        "total_paginas": total_paginas,
-        "pagina": pagina,
-        "data": livros,
-    }
+    retorno_paginado = servico_livro.buscar_de_livros_paginado(
+        pagina=pagina, quantidade=quantidade, filtro=busca
+    )
+    return retorno_paginado
 
 
-# Rota para obter um livro pelo ID
 @roteador.get("/obter-livros/{id}")
 def obter_livro(id: int, db: Session = Depends(pegar_conexao_db)):
-    livro = db.query(Livro).filter(Livro.id == id).first()
+    repo_livro = LivroRepository(db=db)
+    servico_livro = LivroService(repo_livro)
 
-    if not livro:
-        raise HTTPException(status_code=404, detail="Livro não encontrado.")
+    livro = servico_livro.buscar_livro_por_id(id)
 
     return livro
 
@@ -100,62 +68,31 @@ def atualizar_livro(
     body: CadastrarLivro,
     db: Session = Depends(pegar_conexao_db),
     usuario_do_login: Usuario = Depends(JWTBearer()),
-):
-    # Verificação se o usuário é um autor
-    if not usuario_do_login.autor:
-        raise HTTPException(
-            status_code=403, detail="Apenas autores podem atualizar livros."
-        )
+) -> Optional[LivroRetorno]:
+    repo_livro = LivroRepository(db=db)
+    servico_livro = LivroService(repo_livro)
 
-    # Busca o livro no banco de dados pelo ID
-    livro = db.query(Livro).filter(Livro.id == id).first()
-
-    # Verifica se o livro existe
-    if not livro:
-        raise HTTPException(status_code=404, detail="Livro não encontrado.")
-
-    # Verifica se o autor do livro é o mesmo usuário que está tentando atualizar
-    if livro.usuario_id != usuario_do_login.id:
-        raise HTTPException(
-            status_code=403, detail="Você não tem permissão para atualizar este livro."
-        )
-
-    # Atualiza os atributos do livro
-    livro.titulo = body.titulo
-    livro.usuario_id = usuario_do_login.id
-    livro.genero = body.genero
-    livro.quantidade = body.quantidade
-    livro.preco = body.preco
-    livro.descricao = body.descricao
-    livro.url_imagem = body.url_imagem
-
-    db.add(livro)
-    # Salva as alterações no banco de dados
-    db.commit()
+    livro = servico_livro.atualizar_livro_existente(
+        livro_id=id,
+        dados_atualizados=body,
+        usuario=usuario_do_login,
+    )
 
     return livro
 
 
-# Rota para deletar um livro
 @roteador.delete("/{id}")
 def deletar_livro(
     id: int,
     db: Session = Depends(pegar_conexao_db),
     usuario_do_login: Usuario = Depends(JWTBearer()),
 ):
-    livro = db.query(Livro).filter(Livro.id == id).first()
+    repo_livro = LivroRepository(db=db)
+    servico_livro = LivroService(repo_livro)
 
-    if not livro:
-        raise HTTPException(status_code=404, detail="Livro não encontrado.")
+    servico_livro.deletar_livro(livro_id=id, usuario=usuario_do_login)
 
-    if livro.deletado:
-        raise HTTPException(status_code=304, detail="Livro já foi deletado.")
-
-    livro.deletado = True
-    db.add(livro)
-    db.commit()
-
-    return Response(status_code=204)  # Retorna 204 No Content após deletar
+    return Response(status_code=204)
 
 
 @roteador.get("/livros-do-autor")
@@ -165,31 +102,14 @@ def listar_livros_do_autor(
     db: Session = Depends(pegar_conexao_db),
     usuario_do_login: Usuario = Depends(JWTBearer()),
 ):
-    # Calcula o offset com base na página e no tamanho da página (ajustando para que a primeira página seja 1)
-    offset = (pagina - 1) * quantidade
+    repo_livro = LivroRepository(db=db)
+    servico_livro = LivroService(repo_livro)
 
-    # Busca todos os livros com o join para trazer informações do autor
-    consulta = db.query(Livro).join(Usuario, Livro.usuario_id == Usuario.id)
-
-    # Filtra a consulta para trazer somente os do usuario logado
-    consulta = consulta.filter(
-        Livro.usuario_id == usuario_do_login.id, Livro.deletado.is_(False)
+    livros = servico_livro.buscar_de_livros_paginado(
+        filtro=None,
+        pagina=pagina,
+        quantidade=quantidade,
+        usuario=usuario_do_login,
     )
 
-    # Executa a consulta com limite e offset
-    livros = consulta.offset(offset).limit(quantidade).all()
-
-    # Conta o total de livros filtrados (sem limite e offset)
-    total = consulta.count()
-
-    # Calcula o número total de páginas
-    total_paginas = (total + quantidade - 1) // quantidade
-
-    # Retorna os livros e a paginação
-    return {
-        "total": total,
-        "tamanho_pagina": quantidade,
-        "total_paginas": total_paginas,
-        "pagina": pagina,
-        "data": livros,
-    }
+    return livros

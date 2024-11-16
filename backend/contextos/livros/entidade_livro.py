@@ -42,5 +42,11 @@ class Livro(_Base):
     def decrementar_quantidade_disponivel(self, quantidade: int = 1):
         self.quantidade -= quantidade
 
+    def deletar(self):
+        self.deletado = True
+
+    def recuperar_deletado(self):
+        self.deletado = False
+
     def __repr__(self):
         return f"<Livro {self.id} - {self.usuario_id} - {self.titulo} - {self.quantidade} - {self.preco} >"
