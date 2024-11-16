@@ -21,23 +21,11 @@ roteador = APIRouter(prefix="/livros", tags=["Livro"])
 def cadastrar_livro(
     body: CadastrarLivro,
     db: Session = Depends(pegar_conexao_db),
-    info_do_login: str = Depends(JWTBearer()),
+    usuario_do_login: Usuario = Depends(JWTBearer()),
 ):
-    # Recupera o email do usuário logado
-    email_usuario = info_do_login.get("sub")
-
-    # Busca o usuário no banco de dados com base no email
-    usuario = db.query(Usuario).filter(Usuario.email.ilike(email_usuario)).first()
-
-    if not usuario:
-        raise HTTPException(status_code=400, detail="Usuário não encontrado.")
-
-    if not usuario.autor:
-        raise HTTPException(status_code=400, detail="Usuário não é autor.")
-
     livro = Livro(
         titulo=body.titulo,
-        usuario_id=usuario.id,
+        usuario_id=usuario_do_login.id,
         genero=body.genero,
         quantidade=body.quantidade,
         preco=body.preco,
@@ -111,32 +99,12 @@ def atualizar_livro(
     id: int,
     body: CadastrarLivro,
     db: Session = Depends(pegar_conexao_db),
-    info_do_login: str = Depends(JWTBearer()),
+    usuario_do_login: Usuario = Depends(JWTBearer()),
 ):
-    # Recupera o email do usuário logado
-    email_usuario = info_do_login.get("sub")
-
-    # Busca o usuário no banco de dados com base no email
-    usuario = db.query(Usuario).filter(Usuario.email.ilike(email_usuario)).first()
-
-    # Verificação se o usuário existe
-    if not usuario:
-        raise HTTPException(status_code=404, detail="Usuário não encontrado.")
-
     # Verificação se o usuário é um autor
-    if not usuario.autor:
+    if not usuario_do_login.autor:
         raise HTTPException(
             status_code=403, detail="Apenas autores podem atualizar livros."
-        )
-
-    # Verificação se o usuário está ativo
-    if not usuario.ativo:
-        raise HTTPException(status_code=403, detail="Usuário não está ativo.")
-
-    # Verificação se o usuário foi deletado
-    if usuario.deletado:
-        raise HTTPException(
-            status_code=403, detail="Usuário foi deletado e não pode fazer esta ação."
         )
 
     # Busca o livro no banco de dados pelo ID
@@ -147,14 +115,14 @@ def atualizar_livro(
         raise HTTPException(status_code=404, detail="Livro não encontrado.")
 
     # Verifica se o autor do livro é o mesmo usuário que está tentando atualizar
-    if livro.usuario_id != usuario.id:
+    if livro.usuario_id != usuario_do_login.id:
         raise HTTPException(
             status_code=403, detail="Você não tem permissão para atualizar este livro."
         )
 
     # Atualiza os atributos do livro
     livro.titulo = body.titulo
-    livro.usuario_id = usuario.id
+    livro.usuario_id = usuario_do_login.id
     livro.genero = body.genero
     livro.quantidade = body.quantidade
     livro.preco = body.preco
@@ -173,7 +141,7 @@ def atualizar_livro(
 def deletar_livro(
     id: int,
     db: Session = Depends(pegar_conexao_db),
-    info_do_login: str = Depends(JWTBearer()),
+    usuario_do_login: Usuario = Depends(JWTBearer()),
 ):
     livro = db.query(Livro).filter(Livro.id == id).first()
 
@@ -190,34 +158,22 @@ def deletar_livro(
     return Response(status_code=204)  # Retorna 204 No Content após deletar
 
 
-# Rota para listar todos os livros com paginação, iniciando da página 1
 @roteador.get("/livros-do-autor")
 def listar_livros_do_autor(
     quantidade: int = Query(10, ge=1),
     pagina: int = Query(1, ge=1),
-    busca: Optional[str] = Query(None),  # Parâmetro de busca opcional
     db: Session = Depends(pegar_conexao_db),
-    info_do_login: str = Depends(JWTBearer()),
+    usuario_do_login: Usuario = Depends(JWTBearer()),
 ):
     # Calcula o offset com base na página e no tamanho da página (ajustando para que a primeira página seja 1)
     offset = (pagina - 1) * quantidade
-
-    # Pega email do usuário
-    email_usuario = info_do_login.get("sub")
-
-    # Busca o usuário no banco de dados com base no email
-    usuario = db.query(Usuario).filter(Usuario.email.ilike(email_usuario)).first()
-
-    # Verificação se o usuário existe
-    if not usuario:
-        raise HTTPException(status_code=404, detail="Usuário não encontrado.")
 
     # Busca todos os livros com o join para trazer informações do autor
     consulta = db.query(Livro).join(Usuario, Livro.usuario_id == Usuario.id)
 
     # Filtra a consulta para trazer somente os do usuario logado
     consulta = consulta.filter(
-        Livro.usuario_id == usuario.id, Livro.deletado.is_(False)
+        Livro.usuario_id == usuario_do_login.id, Livro.deletado.is_(False)
     )
 
     # Executa a consulta com limite e offset

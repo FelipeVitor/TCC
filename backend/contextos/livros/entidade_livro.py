@@ -1,12 +1,13 @@
 from sqlalchemy import (
     Boolean,
-    create_engine,
     Column,
-    Integer,
-    String,
     ForeignKey,
+    Integer,
     Numeric,
+    String,
+    create_engine,
 )
+
 from libs.database.sqlalchemy import _Base
 
 
@@ -37,6 +38,9 @@ class Livro(_Base):
             url_imagem=url_imagem,
             deletado=False,
         )
+
+    def decrementar_quantidade_disponivel(self, quantidade: int = 1):
+        self.quantidade -= quantidade
 
     def __repr__(self):
         return f"<Livro {self.id} - {self.usuario_id} - {self.titulo} - {self.quantidade} - {self.preco} >"

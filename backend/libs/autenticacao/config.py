@@ -85,7 +85,7 @@ class JWTBearer(HTTPBearer):
             if usuario.deletado:
                 raise HTTPException(status_code=403, detail="Usuario deletado")
 
-            return dados_token
+            return usuario
         else:
             raise HTTPException(status_code=403, detail="Invalid authorization code")
 

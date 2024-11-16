@@ -17,16 +17,12 @@ from libs.database.sqlalchemy import pegar_conexao_db
 roteador = APIRouter(prefix="/carrinho", tags=["Carrinho"])
 
 
-# Endpoint para adicionar um item ao carrinho
 @roteador.post("/adicionar")
 def adicionar_item_no_carrinho(
     item: AdicionarItemCarrinho,
     db: Session = Depends(pegar_conexao_db),
-    info_do_login: str = Depends(JWTBearer()),
+    usuario_do_login: Usuario = Depends(JWTBearer()),
 ):
-    usuario_email = info_do_login.get("sub")
-    usuario = db.query(Usuario).filter(Usuario.email.ilike(usuario_email)).first()
-
     # Verificar se o livro existe e tem quantidade disponível
     livro = db.query(Livro).filter(Livro.id == item.livro_id).first()
     if not livro:
@@ -35,12 +31,12 @@ def adicionar_item_no_carrinho(
     carrinhos = (
         db.query(Carrinho)
         .filter(Carrinho.livro_id == livro.id)
-        .filter(Carrinho.usuario_id == usuario.id)
+        .filter(Carrinho.usuario_id == usuario_do_login.id)
         .all()
     )
 
     novo_carrinho = Carrinho.criar(
-        usuario_id=usuario.id,
+        usuario_id=usuario_do_login.id,
         livro_id=livro.id,
         quantidade=item.quantidade,
     )
@@ -71,16 +67,9 @@ def adicionar_item_no_carrinho(
 @roteador.get("/")
 def buscar_carrinho_do_usuario(
     db: Session = Depends(pegar_conexao_db),
-    info_do_login: str = Depends(JWTBearer()),
+    usuario_do_login: Usuario = Depends(JWTBearer()),
 ) -> CarrinhoFinal:
-    usuario_email = info_do_login.get("sub")
-    usuario = db.query(Usuario).filter(Usuario.email.ilike(usuario_email)).first()
-
-    if not usuario:
-        raise HTTPException(status_code=404, detail="Usuário não encontrado")
-
-    # Busca os itens do carrinho e seus livros associados
-    carrinhos_com_livros = buscar_carriho_do_usuario_repo(db, usuario.id)
+    carrinhos_com_livros = buscar_carriho_do_usuario_repo(db, usuario_do_login.id)
 
     carrinho_final = CarrinhoFinal(itens=[], total_do_carrinho=0)
 
@@ -129,19 +118,14 @@ def remover_item_no_carrinho(
     livro_id: int,
     quantidade: int,
     db: Session = Depends(pegar_conexao_db),
-    info_do_login: str = Depends(JWTBearer()),
+    usuario_do_login: Usuario = Depends(JWTBearer()),
 ):
-    usuario_email = info_do_login.get("sub")
-    usuario: Usuario = (
-        db.query(Usuario).filter(Usuario.email.ilike(usuario_email)).first()
-    )
-
     # Verificar se o livro existe e tem quantidade disponível
     livro = db.query(Livro).filter(Livro.id == livro_id).first()
     if not livro:
         raise HTTPException(status_code=404, detail="Livro não encontrado")
 
-    carrinhos = buscar_carriho_do_usuario_repo(db, usuario.id)
+    carrinhos = buscar_carriho_do_usuario_repo(db, usuario_do_login.id)
 
     if len(carrinhos) == 0:
         raise HTTPException(status_code=404, detail="Item não encontrado no carrinho")

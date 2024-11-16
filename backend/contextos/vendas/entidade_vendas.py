@@ -41,6 +41,10 @@ class Venda(_Base):
     def total_da_venda(self):
         return sum([item.preco_unitario * item.quantidade for item in self.itens])
 
+    @property
+    def total_de_itens_vendidos(self):
+        return len(self.itens)
+
     def __repr__(self):
         return f"<Venda {self.id} - {self.id_usuario_comprador} - {self.data_venda}>"
 

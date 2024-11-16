@@ -14,7 +14,7 @@ roteador = APIRouter(prefix="/usuarios", tags=["Usuario"])
 def cadastrar_usuario(
     body: CadastrarUsuario,
     db: Session = Depends(pegar_conexao_db),
-    info_do_login: str = Depends(JWTBearer()),
+    usuario_do_login: Usuario = Depends(JWTBearer()),
 ):
     existe_usuario_no_banco = (
         db.query(Usuario).filter(Usuario.email == body.email).first()
@@ -41,7 +41,7 @@ def cadastrar_usuario(
 def ativar_autor(
     id: int,
     db: Session = Depends(pegar_conexao_db),
-    info_do_login: str = Depends(JWTBearer()),
+    usuario_do_login: Usuario = Depends(JWTBearer()),
 ):
     existe_usuario_no_banco = db.query(Usuario).filter(Usuario.id == id).first()
 
