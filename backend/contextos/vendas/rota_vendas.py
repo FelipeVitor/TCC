@@ -57,6 +57,3 @@ def listar_compras_e_vendas(
     )
 
     return retorno
-
-
-git rm --cached
