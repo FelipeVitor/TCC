@@ -1,19 +1,20 @@
 import React, { useState, useEffect } from 'react';
-import { useNavigate, Link } from 'react-router-dom';
-import { AppBar, Button, Toolbar, Typography, Grid, Card, CardContent, Container, IconButton, Avatar, Menu, MenuItem, Snackbar, Alert, Pagination } from '@mui/material';
+import { Typography, Grid, Card, CardContent, Container, Snackbar, Alert, Pagination, AppBar, Toolbar, IconButton, Avatar, Button } from '@mui/material';
+import { Link } from 'react-router-dom';
 import ShoppingCartIcon from '@mui/icons-material/ShoppingCart';
 import AccountCircleIcon from '@mui/icons-material/AccountCircle';
 import api from '../configs/api';
 
-function AuthorSales() {
-    const [sales, setSales] = useState([]);
+function AuthorPurchases() {
+    const [purchases, setPurchases] = useState([]);
     const [currentPage, setCurrentPage] = useState(1);
-    const itemsPerPage = 4; // Número de cards por página
+    const itemsPerPage = 4; // Número de compras por página
     const [snackbarOpen, setSnackbarOpen] = useState(false);
     const [snackbarMessage, setSnackbarMessage] = useState('');
     const [snackbarSeverity, setSnackbarSeverity] = useState('success');
 
-    const fetchSales = async () => {
+    // Função para buscar as compras da API
+    const fetchPurchases = async () => {
         try {
             const token = localStorage.getItem('token');
             if (!token) {
@@ -26,53 +27,31 @@ function AuthorSales() {
 
             const data = response.data;
 
-            if (data && (Array.isArray(data.compras) || Array.isArray(data.vendas))) {
-                const formattedSales = [];
+            if (data && Array.isArray(data.compras)) {
+                const formattedPurchases = data.compras.map((item) => {
+                    const compra = item.compra;
+                    return {
+                        data: compra.data_venda,
+                        total: compra.valor_total_da_venda,
+                        livros: compra.nome_do_livro.map((livro) => ({
+                            titulo: livro.titulo,
+                            preco: livro.preco,
+                            quantidade: livro.quantidade,
+                        })),
+                    };
+                });
 
-                // Processa as compras
-                if (Array.isArray(data.compras)) {
-                    data.compras.forEach((item) => {
-                        const compra = item.compra;
-                        formattedSales.push({
-                            data: compra.data_venda,
-                            total: compra.valor_total_da_venda,
-                            livros: compra.nome_do_livro.map((livro) => ({
-                                titulo: livro.titulo,
-                                preco: livro.preco,
-                                quantidade: livro.quantidade,
-                            })),
-                        });
-                    });
-                }
-
-                // Processa as vendas
-                if (Array.isArray(data.vendas)) {
-                    data.vendas.forEach((item) => {
-                        item.venda.forEach((venda) => {
-                            formattedSales.push({
-                                data: venda.data_venda,
-                                total: venda.valor_total_da_venda,
-                                livros: [
-                                    {
-                                        titulo: venda.nome_do_livro,
-                                        quantidade: venda.quantidade,
-                                    },
-                                ],
-                            });
-                        });
-                    });
-                }
-
-                setSales(formattedSales);
+                setPurchases(formattedPurchases);
             } else {
                 throw new Error("Formato inesperado de resposta da API.");
             }
         } catch (error) {
-            console.error('Erro ao buscar as vendas:', error);
-            showSnackbar('Erro ao carregar as vendas.', 'error');
+            console.error('Erro ao buscar as compras:', error);
+            showSnackbar('Erro ao carregar as compras.', 'error');
         }
     };
 
+    // Função para exibir mensagens
     const showSnackbar = (message, severity = 'success') => {
         setSnackbarMessage(message);
         setSnackbarSeverity(severity);
@@ -83,16 +62,17 @@ function AuthorSales() {
         setSnackbarOpen(false);
     };
 
+    // Chama a busca das compras ao carregar o componente
     useEffect(() => {
-        fetchSales();
+        fetchPurchases();
     }, []);
 
     const handlePageChange = (event, value) => {
         setCurrentPage(value);
     };
 
-    // Calcular vendas da página atual
-    const paginatedSales = sales.slice(
+    // Gerencia a paginação
+    const paginatedPurchases = purchases.slice(
         (currentPage - 1) * itemsPerPage,
         currentPage * itemsPerPage
     );
@@ -117,27 +97,47 @@ function AuthorSales() {
 
             <Container>
                 <Typography variant="h4" style={{ margin: '20px 0' }} align="center">
-                    Minhas Vendas
+                    Minhas Compras
                 </Typography>
 
                 <Grid container spacing={3} justifyContent="center">
-                    {paginatedSales.length > 0 ? (
-                        paginatedSales.map((sale, index) => (
+                    {paginatedPurchases.length > 0 ? (
+                        paginatedPurchases.map((purchase, index) => (
                             <Grid item xs={12} sm={6} md={3} key={index}>
-                                <Card sx={{ display: 'flex', flexDirection: 'column', justifyContent: 'space-between', boxShadow: 3, height: '100%' }}>
+                                <Card
+                                    sx={{
+                                        display: 'flex',
+                                        flexDirection: 'column',
+                                        justifyContent: 'space-between',
+                                        boxShadow: 3,
+                                        height: '100%',
+                                    }}
+                                >
                                     <CardContent>
                                         <Typography variant="subtitle1" color="textSecondary">
-                                            Data da Venda: {new Date(sale.data).toLocaleDateString()}
+                                            Data da Compra: {new Date(purchase.data).toLocaleDateString()}
                                         </Typography>
 
-                                        {sale.livros.map((livro, i) => (
-                                            <Typography key={i} variant="subtitle1" color="textSecondary">
-                                                {livro.titulo} - Quantidade: {livro.quantidade}
+                                        {purchase.livros.map((livro, i) => (
+                                            <Typography
+                                                key={i}
+                                                variant="subtitle1"
+                                                color="textSecondary"
+                                            >
+                                                {livro.titulo} - Quantidade: {livro.quantidade} - Preço: R${' '}
+                                                {parseFloat(livro.preco).toFixed(2).replace('.', ',')}
                                             </Typography>
                                         ))}
 
-                                        <Typography variant="h6" color="primary" style={{ marginTop: '10px' }}>
-                                            Total: R$ {parseFloat(sale.total).toFixed(2).replace('.', ',')}
+                                        <Typography
+                                            variant="h6"
+                                            color="primary"
+                                            style={{ marginTop: '10px' }}
+                                        >
+                                            Total: R${' '}
+                                            {parseFloat(purchase.total)
+                                                .toFixed(2)
+                                                .replace('.', ',')}
                                         </Typography>
                                     </CardContent>
                                 </Card>
@@ -145,7 +145,7 @@ function AuthorSales() {
                         ))
                     ) : (
                         <Typography variant="h6" align="center" color="textSecondary">
-                            Nenhuma venda encontrada.
+                            Nenhuma compra encontrada.
                         </Typography>
                     )}
                 </Grid>
@@ -153,13 +153,30 @@ function AuthorSales() {
                 {/* Paginação */}
                 <Grid container justifyContent="center" style={{ marginTop: '20px' }}>
                     <Pagination
-                        count={Math.ceil(sales.length / itemsPerPage)}
+                        count={Math.ceil(purchases.length / itemsPerPage)}
                         page={currentPage}
                         onChange={handlePageChange}
                         color="primary"
                     />
                 </Grid>
+
+                {/* Snackbar para mensagens */}
+                <Snackbar
+                    open={snackbarOpen}
+                    autoHideDuration={4000}
+                    onClose={handleSnackbarClose}
+                    anchorOrigin={{ vertical: 'top', horizontal: 'right' }}
+                >
+                    <Alert
+                        onClose={handleSnackbarClose}
+                        severity={snackbarSeverity}
+                        sx={{ width: '100%' }}
+                    >
+                        {snackbarMessage}
+                    </Alert>
+                </Snackbar>
             </Container>
+
 
             {/* Snackbar para exibir mensagens */}
             <Snackbar
@@ -172,8 +189,8 @@ function AuthorSales() {
                     {snackbarMessage}
                 </Alert>
             </Snackbar>
-        </div>
+        </div >
     );
 }
 
-export default AuthorSales;
+export default AuthorPurchases;

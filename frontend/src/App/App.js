@@ -8,6 +8,7 @@ import Cart from '../Cart/Cart'
 import MyBooks from '../MyBooks/MyBooks';
 import api from '../configs/api';
 import MySales from '../MySales/MySales';
+import MyPurchases from '../MyPurchases/MyPurchases';
 import Callcenter from '../Callcenter/Callcenter';
 
 
@@ -113,6 +114,9 @@ function App() {
 
       {/* Rota para a tela de vendas do autor */}
       <Route path="/mysales" element={<MySales />} />
+
+      {/* Rota para a tela de compras do cliente */}
+      <Route path="/mypurchases" element={<MyPurchases />} />
 
       {/* Rota para a tela do callcenter */}
       <Route path="/callcenter" element={<Callcenter />} />
