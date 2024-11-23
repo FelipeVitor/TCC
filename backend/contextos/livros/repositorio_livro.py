@@ -3,7 +3,6 @@ from typing import Optional
 from sqlalchemy import or_
 from sqlalchemy.orm import Session
 
-from contextos.carrinho.entidade_carrinho import Carrinho
 from contextos.livros.entidade_livro import Livro
 from contextos.usuarios.entidade_usuario import Usuario
 from libs.repository.repositorio_interface import IRepository
@@ -34,12 +33,13 @@ class LivroRepository(IRepository):
         if usuario:
             consulta = consulta.filter(Livro.usuario_id == usuario)
 
+        total_de_livros = consulta.count()
+
         consulta = consulta.limit(quantidade).offset((pagina - 1) * quantidade)
 
-        total_de_livros = consulta.count()
-        total_de_paginas = (total_de_livros + quantidade - 1) // quantidade
-
         livros = consulta.all()
+
+        total_de_paginas = (total_de_livros + quantidade - 1) // quantidade
 
         return livros, total_de_livros, total_de_paginas
 
