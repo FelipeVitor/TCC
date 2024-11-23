@@ -9,7 +9,7 @@ from contextos.vendas import rota_vendas
 
 from contextos.carrinho import rota_carrinho
 from fastapi.middleware.cors import CORSMiddleware
-
+from libs.middleware.logs import ConsoleLogs
 
 criar_tabela()
 popular_tabela()
@@ -23,6 +23,7 @@ app.add_middleware(
     allow_headers=["*"],
     allow_credentials=True,
 )
+app.add_middleware(ConsoleLogs)
 
 app.include_router(rota_usuario.roteador)
 app.include_router(rota_autenticacao.roteador)
@@ -37,4 +38,4 @@ def redirecionar_para_docs():
 
 
 if __name__ == "__main__":
-    run(app, host="0.0.0.0", port=9000)
+    run(app, host="0.0.0.0", port=9000, log_level="critical")
