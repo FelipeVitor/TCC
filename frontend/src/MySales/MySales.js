@@ -26,24 +26,8 @@ function AuthorSales() {
 
             const data = response.data;
 
-            if (data && (Array.isArray(data.compras) || Array.isArray(data.vendas))) {
+            if (data && Array.isArray(data.vendas)) {
                 const formattedSales = [];
-
-                // Processa as compras
-                if (Array.isArray(data.compras)) {
-                    data.compras.forEach((item) => {
-                        const compra = item.compra;
-                        formattedSales.push({
-                            data: compra.data_venda,
-                            total: compra.valor_total_da_venda,
-                            livros: compra.nome_do_livro.map((livro) => ({
-                                titulo: livro.titulo,
-                                preco: livro.preco,
-                                quantidade: livro.quantidade,
-                            })),
-                        });
-                    });
-                }
 
                 // Processa as vendas
                 if (Array.isArray(data.vendas)) {

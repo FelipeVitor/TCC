@@ -177,7 +177,7 @@ function Cart() {
                                         <Box sx={{ position: 'relative', paddingTop: '125%' }}>
                                             <CardMedia
                                                 component="img"
-                                                image={item.url_imagem === "" ? item.url_imagem : defaultImage}
+                                                image={item.url_imagem === "" ? defaultImage : item.livro.url_imagem}
                                                 alt={item.livro.titulo}
                                                 sx={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', objectFit: 'cover' }}
                                             />
